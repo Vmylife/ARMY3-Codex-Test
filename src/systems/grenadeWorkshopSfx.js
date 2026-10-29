@@ -1,6 +1,6 @@
 /* ARMY3 grenade workshop sound overlay v1. Works from the preloaded same-origin 3D iframe.
    Zero changes to crafting/aiming/scoring logic. All audio is original game-only FX. */
-import './grenadeArenaSfx.js?v=324';
+import './grenadeArenaSfx.js?v=325';
 import {installMinigameBgm} from './minigameBgm.js?v=170';
 (()=>{'use strict';
 const host=window.parent!==window&&new URLSearchParams(location.search).get('embedded')==='1'?window.parent:window;
@@ -39,6 +39,9 @@ listen(doc,'pointerdown',e=>{
 listen(doc,'pointermove',e=>{if(!drag)return;const el=doc.getElementById('wheelPad');if(!el){drag=false;return}const r=el.getBoundingClientRect(),angle=Math.atan2(e.clientY-(r.top+r.height/2),e.clientX-(r.left+r.width/2));let delta=angle-prevAngle;if(delta>Math.PI)delta-=Math.PI*2;if(delta<-Math.PI)delta+=Math.PI*2;prevAngle=angle;if(delta>0&&delta<1.3)wheelMove(delta)},true);
 function pointerEnd(){if(pouring){pouring=false;stopPour(true)}drag=false}
 for(const type of ['pointerup','pointercancel'])listen(doc,type,pointerEnd,true);
+// iOS can revoke pointer capture without an ordinary release (e.g. interruption).
+// Stop the loop immediately in that case as well; pointerEnd is idempotent.
+listen(doc,'lostpointercapture',e=>{if(target(e,'pourBtn')||target(e,'wheelPad'))pointerEnd()},true);
 listen(doc,'click',e=>{
  if(target(e,'startBtn')){unlock();return}
  if(target(e,'pressBtn')){

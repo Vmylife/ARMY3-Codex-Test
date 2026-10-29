@@ -92,6 +92,18 @@ body.arena-live #grenadeArenaFrame{opacity:1;pointer-events:auto}
 .arena-transition-card strong{display:block;font-size:21px;margin-bottom:9px}
 .arena-transition-card p{color:#cbd9c9;line-height:1.6;margin:0 0 16px;font-size:13px}
 #arenaRetry{display:none;width:100%;padding:13px 15px;border-radius:10px;background:#f0d18a;color:#1d321f;font-size:15px;font-weight:900}
+/* Workshop-only finishes: opaque panels avoid a live blur over the canvas. */
+body.workmode .heading,body.shapemode .heading{background:#263b2f;border-color:#a7b69b66;backdrop-filter:none}
+body.workmode .stat,body.shapemode .stat{background:#20372b;border-color:#9cac8a70;box-shadow:0 3px 0 #102319}
+body.workmode #controls,body.shapemode #controls{background:#1b3025;border-color:#9eae8d70;box-shadow:0 5px 0 #0e2118;backdrop-filter:none}
+body.workmode .actionThree .btn{box-shadow:inset 0 1px #e4e9c12b,0 3px 0 #101e16;transition:transform .08s,box-shadow .08s,background .08s}
+body.workmode .actionThree .btn:active:not(:disabled),body.workmode #pourBtn.isHeld{transform:translateY(3px);box-shadow:inset 0 2px 4px #14291c55,0 0 0 #101e16}
+body.workmode #pourBtn.isHeld{background:linear-gradient(160deg,#c7cd91,#91a575)}
+body.shapemode #wheelPad{box-shadow:0 5px 0 #101e16,inset 0 3px 4px #e9f8d327;transition:border-color .1s,box-shadow .1s}
+body.shapemode #wheelPad.is-turning{border-color:#d3c188;box-shadow:0 2px 0 #101e16,inset 0 2px 6px #091b12aa}
+body.workmode #toast[data-grade="PERFECT"],body.workmode #toast[data-grade="GREAT"]{border-color:#e8d69d;background:#304735;color:#fff0bf}
+body.workmode #toast[data-grade="GOOD"]{border-color:#aabc90;background:#2b4030;color:#e9edcf}
+body.workmode #toast[data-grade="BAD"],body.workmode #toast[data-grade="MISS"]{border-color:#c99a76;background:#493b2c;color:#f6d4ae}
 </style>
 </head>
 <body>
@@ -152,12 +164,14 @@ function showGallery(){const gotten=earnedAchievements;
 }
 let W=0,H=0,DPR=1;
 let S={},rafTime=0,lastT=0,pouring=false,shapeDragging=false,lastAngle=0,qtePos=0,aimPos=0,toastClock=0;
+// Presentation only: these values never participate in crafting or scoring.
+let flowVisual=0,pressVisualAt=-10,pressVisualPos=0,pressVisualCenter=0,wheelVisual=0;
 const BARREL_SPACE=1000; /* abstract game-only visual capacity, not a physical formula */
 const powderLevel=()=>S.powder/(Math.max(.1,S.density)*BARREL_SPACE);
 const TAU=Math.PI*2, clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),rnd=(a,b)=>a+Math.random()*(b-a),ease=t=>t*t*(3-2*t),fmt=n=>Math.floor(n).toLocaleString('en-US');
-function reset(){S={phase:'intro',powder:0,density:0.60,round:1,totalPressed:0,lastPourPress:0,hp:100,broken:false,overflowed:false,spillTime:0,shape:0,shapeTarget:rnd(.91,1.08),power:0,qteCenter:.5,qteSpeed:1.8,qteClock:0,compressT:0,compressMode:'',aimX:0,aimZ:0,aimClock:0,throwT:0,shotX:0,shotZ:0,particles:[],shake:0,shotRot:0};pouring=false;shapeDragging=false;lastT=0;renderHUD();$('intro').style.display='flex';$('endOverlay').classList.remove('show');$('impactHud').classList.remove('show');$('world3d').style.display='none';document.body.classList.remove('fieldmode','blastmode');if(WORLD){WORLD.radius=-1;WORLD.mode='field';WORLD.counter={buildings:0,kills:0};}hadNewLandmarks=new Set();lastLandmarkShown=0;roundAchievements=new Set();$('controls').classList.add('hidden');$('guide').classList.add('hidden');}
+function reset(){flowVisual=0;pressVisualAt=-10;wheelVisual=0;S={phase:'intro',powder:0,density:0.60,round:1,totalPressed:0,lastPourPress:0,hp:100,broken:false,overflowed:false,spillTime:0,shape:0,shapeTarget:rnd(.91,1.08),power:0,qteCenter:.5,qteSpeed:1.8,qteClock:0,compressT:0,compressMode:'',aimX:0,aimZ:0,aimClock:0,throwT:0,shotX:0,shotZ:0,particles:[],shake:0,shotRot:0};pouring=false;shapeDragging=false;lastT=0;renderHUD();$('intro').style.display='flex';$('endOverlay').classList.remove('show');$('impactHud').classList.remove('show');$('world3d').style.display='none';document.body.classList.remove('fieldmode','blastmode');if(WORLD){WORLD.radius=-1;WORLD.mode='field';WORLD.counter={buildings:0,kills:0};}hadNewLandmarks=new Set();lastLandmarkShown=0;roundAchievements=new Set();$('controls').classList.add('hidden');$('guide').classList.add('hidden');}
 function phase(p){S.phase=p;renderHUD();}
-function toast(text,ms=1300){const el=$('toast');el.textContent=text;el.classList.add('show');toastClock=performance.now()+ms;}
+function toast(text,ms=1300){const el=$('toast'),grade=(/^(PERFECT|GREAT|GOOD|BAD|MISS)/.exec(text)||[])[1]||'';el.dataset.grade=grade;el.textContent=grade?grade+'！':text;el.classList.add('show');toastClock=performance.now()+ms;}
 function stepIndex(){return ['fill','press'].includes(S.phase)?0:S.phase==='shape'?1:['aimX','aimZ'].includes(S.phase)?2:3;}
 function renderHUD(){
  const ph=S.phase,work=ph==='fill'||ph==='press';
@@ -190,9 +204,9 @@ function renderHUD(){
    $('shapeBtn').addEventListener('click',()=>{if(S.phase==='fill'&&S.powder>=15)startShape()});
  }else if(ph==='shape'){
    ctl.innerHTML=`<div id="wheelLayout"><div id="wheelPad"><div id="wheelFace"></div><div id="wheelRot"><div id="wheelGrip"></div></div><div id="wheelCenter">↻ 旋轉</div></div><div id="rotateInstructions"><b>將桶子慢慢定型</b><br>順時針轉動轉輪。<br>覺得外觀適合了，就按完成。</div></div><button id="shapeDone" class="btn primary full">完成定型 · 前往投擲　→</button>`;
-   const wheel=$('wheelPad');wheel.addEventListener('pointerdown',e=>{e.preventDefault();wheel.setPointerCapture(e.pointerId);shapeDragging=true;lastAngle=pointerAngle(e,wheel)});
-   wheel.addEventListener('pointermove',e=>{if(!shapeDragging||S.phase!=='shape')return;e.preventDefault();const a=pointerAngle(e,wheel);let d=a-lastAngle;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;lastAngle=a;if(d>0&&d<1.3){S.shape=clamp(S.shape+d/TAU*.38,0,1.65);S.shake=Math.min(.4,S.shake+.012);updateWheel();}});
-   const stop=()=>{shapeDragging=false};wheel.addEventListener('pointerup',stop);wheel.addEventListener('pointercancel',stop);wheel.addEventListener('lostpointercapture',stop);
+   const wheel=$('wheelPad');wheel.addEventListener('pointerdown',e=>{e.preventDefault();wheel.setPointerCapture(e.pointerId);shapeDragging=true;wheel.classList.add('is-turning');lastAngle=pointerAngle(e,wheel)});
+   wheel.addEventListener('pointermove',e=>{if(!shapeDragging||S.phase!=='shape')return;e.preventDefault();const a=pointerAngle(e,wheel);let d=a-lastAngle;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;lastAngle=a;if(d>0&&d<1.3){S.shape=clamp(S.shape+d/TAU*.38,0,1.65);S.shake=Math.min(.4,S.shake+.012);wheelVisual=1;updateWheel();}});
+   const stop=()=>{shapeDragging=false;wheel.classList.remove('is-turning')};wheel.addEventListener('pointerup',stop);wheel.addEventListener('pointercancel',stop);wheel.addEventListener('lostpointercapture',stop);
    $('shapeDone').addEventListener('click',enterThrowTraining);updateWheel();
  }else if(ph==='aimX'||ph==='aimZ'){
    const ax=ph==='aimX';ctl.innerHTML=`<div class="smallTitle">${ax?'第 1 步：左右方向':'第 2 步：投擲遠近'}</div><div id="aimTrack"><div id="aimPerfect"></div><div id="aimPointer"></div></div><button id="lockAim" class="btn primary full">${ax?'鎖定左右方向　→':'投擲！　↗'}</button><div class="underText">金色指針會快速來回移動，靠近中央越準</div>`;
@@ -200,7 +214,7 @@ function renderHUD(){
  }
 }
 function pointerAngle(e,el){const r=el.getBoundingClientRect();return Math.atan2(e.clientY-(r.top+r.height/2),e.clientX-(r.left+r.width/2));}
-function updateWheel(){const el=$('wheelRot');if(el)el.style.transform=`rotate(${S.shape/.38*360}deg)`;}
+function updateWheel(){const el=$('wheelRot');if(el)el.style.transform=`rotate(${S.shape/.38*360}deg)`;const face=$('wheelFace');if(face)face.style.transform=`rotate(${S.shape/.38*360}deg)`;}
 function updateStats(){if(S.phase==='intro')return;
  const g=$('gramText'),d=$('densityText');if(g)g.textContent=fmt(S.powder);if(d)d.textContent=S.density.toFixed(2);
  const b=$('pressBtn'),shape=$('shapeBtn');if(S.phase==='fill'&&b)b.disabled=S.powder<15;
@@ -209,6 +223,7 @@ function updateStats(){if(S.phase==='intro')return;
 function startPress(){if(S.phase!=='fill'||S.powder<15)return;pouring=false;
  S.qteClock=0;S.qteCenter=rnd(.30,.70);S.qteSpeed=1.4+Math.min(2.8,(S.totalPressed+1)*.19);phase('press');}
 function finishPress(){if(S.phase!=='press')return;
+ pressVisualAt=rafTime;pressVisualPos=qtePos;pressVisualCenter=S.qteCenter;
  const deviation=Math.abs(qtePos-S.qteCenter);let label,loss,gain;
  if(deviation<=.024){label='PERFECT！';loss=0;gain=.40}
  else if(deviation<=.072){label='GREAT！';loss=4;gain=.29}
@@ -248,7 +263,7 @@ function makeArenaFrame(){
  arenaFrame.title='手榴彈三投鑑測';arenaFrame.setAttribute('loading','eager');
  arenaFrame.setAttribute('aria-hidden','true');
  // No top-level navigation: keeps iOS Add-to-Home-Screen standalone mode intact.
- arenaFrame.src='./grenade-user-play.html?embedded=1&v=152';
+ arenaFrame.src='./grenade-user-play.html?embedded=1&v=153';
  arenaFrame.addEventListener('error',()=>{
   arenaFailure='無法載入 3D 投擲場頁面。';
   if(pendingCraft)arenaNotice('投擲場載入失敗',arenaFailure,true);
@@ -379,10 +394,10 @@ function rr(x,y,w,h,r,fill,stroke,lw=1){ctx.beginPath();ctx.roundRect(x,y,w,h,r)
 function line(x1,y1,x2,y2,color,width=2){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()}
 function ellipse(x,y,rx,ry,fill,stroke,lw=1){ctx.beginPath();ctx.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),0,0,TAU);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke()}}
 function colorGrad(x0,y0,x1,y1,a,b){let g=ctx.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,a);g.addColorStop(1,b);return g}
-function drawWorkshop(t){const visibleTop=$('head').getBoundingClientRect().bottom,controlBox=$('controls').getBoundingClientRect();const visibleBottom=$('controls').classList.contains('hidden')?H-30:controlBox.top;const cy=clamp((visibleTop+visibleBottom)*.5+19,H*.34,H*.60);let bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#354f3f');bg.addColorStop(.53,'#172e25');bg.addColorStop(1,'#091b16');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+function drawWorkshop(t){const visibleTop=$('head').getBoundingClientRect().bottom,controlBox=$('controls').getBoundingClientRect();const visibleBottom=$('controls').classList.contains('hidden')?H-30:controlBox.top;const cy=clamp((visibleTop+visibleBottom)*.5+19,H*.34,H*.60);let bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#596b57');bg.addColorStop(.53,'#344d3c');bg.addColorStop(1,'#1a3024');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
  // vertical wall sheets and seams
  for(let x=-100,i=0;x<W+110;x+=99,i++){ctx.fillStyle=i%2?'#ffffff05':'#00000010';ctx.fillRect(x,0,98,H*.7);line(x+98,0,x+98,H*.73,'#aec3a018',2)}
- const v=ctx.createRadialGradient(W*.50,cy-60,25,W*.50,cy+10,W*.72);v.addColorStop(0,'#a6c79526');v.addColorStop(1,'#08191000');ctx.fillStyle=v;ctx.fillRect(0,0,W,H);
+ const v=ctx.createRadialGradient(W*.50,cy-60,25,W*.50,cy+10,W*.72);v.addColorStop(0,'#e5ddb62b');v.addColorStop(1,'#17281c00');ctx.fillStyle=v;ctx.fillRect(0,0,W,H);
  // pipe rails and backlit window
  line(0,H*.265,W,H*.265,'#71877967',8);line(0,H*.275,W,H*.275,'#091a13b0',5);
  for(let x=28;x<W;x+=116){rr(x,H*.29,12,H*.28,4,'#0c231d63','#8ca68620',2)}
@@ -394,27 +409,35 @@ function drawWorkshop(t){const visibleTop=$('head').getBoundingClientRect().bott
  // top overhead hydraulic press assembly
  rr(px-spread-15,cy-192,spread*2+30,24,6,colorGrad(0,cy-192,0,cy-165,'#859580','#344b3b'),'#afc7a36e',2);
  for(let x=px-spread+28;x<px+spread-18;x+=43){ellipse(x,cy-181,3,3,'#26382f','#a4b7a085',1)}
- const pressY=cy-157+(S.phase==='press'||S.compressT>0?Math.sin(t*7)*3+S.compressT*8:0);
+ // A fast downstroke, contact and slower return are visual only.
+ const pressAge=t-pressVisualAt;
+ const pressTravel=pressAge<0||pressAge>.50?0:pressAge<.06?ease(pressAge/.06):pressAge<.16?1:1-ease((pressAge-.16)/.34);
+ const pressY=cy-157+pressTravel*20+(pouring?Math.sin(t*14)*.8:0);
+ rr(px-7,cy-175,14,Math.max(5,pressY-cy+175),2,'#627463','#aab99a58',1);
  rr(px-41,pressY,82,20,5,colorGrad(0,pressY,0,pressY+21,'#a2aaa0','#3c5441'),'#d8dfc34d',2);rr(px-19,pressY-13,38,17,4,'#63756b','#cedbbe58',2);
  if(S.phase==='fill'||S.phase==='press'||S.spillTime>0){
  // hopper and falling powder
  rr(px-41,cy-232,82,30,4,'#495c51','#d5dcc058',2);ctx.beginPath();ctx.moveTo(px-35,cy-204);ctx.lineTo(px+35,cy-204);ctx.lineTo(px+12,cy-177);ctx.lineTo(px-12,cy-177);ctx.closePath();ctx.fillStyle='#b3ab6c';ctx.fill();rr(px-10,cy-181,20,16,3,'#a8aa7c');
  // Granules descend exactly to the mouth, then continue *inside* the dark opening.
  // The inside-mouth segment is deliberately rendered later than the barrel body.
- if(pouring||S.spillTime>0){
+ if(flowVisual>.01||S.spillTime>0){
+   ctx.save();ctx.globalAlpha=S.spillTime>0?1:flowVisual;
    const streamEnd=cy-119;
    for(let i=0;i<30;i++){
      const y=cy-164+(t*240+i*11.7)%52;
      if(y>streamEnd)continue;
      const x=px+Math.sin(i*91.7)*((i%5)+2)*1.1;
-     ellipse(x,y,1.1+i%3*.55,1.4+i%4*.5,i%3===0?'#f5e0a1':'#cfb878');
+     ellipse(x,y,1.1+i%3*.55,1.4+i%4*.5,i%3===0?'#e9d298':'#bdac77');
    }
+   ctx.restore();
  }
  }
  // side light panel
  let x=px-spread+29;if(W>350){rr(x,cy-144,63,33,5,'#0b2a1e','#aec79354',1);ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.fillStyle='#b4deae';ctx.fillText('MFG-01',x+31,cy-131);ctx.fillStyle=S.broken?'#e6a173':'#85d3a5';ctx.fillText(S.broken?'FAULT':'READY',x+31,cy-118)}
  // shadow
- ellipse(px,cy+107,114,17,'#06180cb0');
+ ellipse(px,cy+107,114,17,'#0b20169a');
+ // Existing frame reacts subtly to the hand wheel, without changing the shape formula.
+ if(S.phase==='shape'&&wheelVisual>.01){ctx.save();ctx.globalAlpha=wheelVisual*.65;line(px-spread+10,cy-165,px-spread+10,cy+105,'#d2c58c',2);line(px+spread-10,cy-165,px+spread-10,cy+105,'#d2c58c',2);ctx.restore()}
  const shape=['shape','aimX','aimZ','flight','end'].includes(S.phase)?S.shape:0;
  drawCan(px,cy+32,shape,t,1);
  // Powder spill clearly pours over the two sides of the barrel when the player overfills it.
@@ -427,14 +450,15 @@ function drawWorkshop(t){const visibleTop=$('head').getBoundingClientRect().bott
      ellipse(x,y,(i%3)+1.6,(i%2)+2.5,i%3===0?'#f8dea0':'#d5b873');
    }ctx.restore();
  }
- if(S.phase==='press'){
+ if(S.phase==='press'||(pressAge>=0&&pressAge<.16&&S.phase==='fill')){
+   const shownCenter=S.phase==='press'?S.qteCenter:pressVisualCenter,shownPos=S.phase==='press'?qtePos:pressVisualPos;
    const bw=Math.min(W*.55,222),bx=px-bw/2,by=cy-73;
    rr(bx-9,by-16,bw+18,70,12,'#0c201ae6','#f2d28b9b',2);
    
    rr(bx,by-6,bw,32,8,'#1e3929','#d2dcb288',1);
-   rr(bx+bw*(S.qteCenter-.075),by-5,bw*.15,30,2,'#e4e9a45f','#e8eebe',1);
-   rr(bx+bw*(S.qteCenter-.018),by-5,bw*.036,30,2,'#dae8a2aa');
-   rr(bx+bw*qtePos-2.5,by-9,5,38,3,'#fff6d6');
+   rr(bx+bw*(shownCenter-.075),by-5,bw*.15,30,2,'#e4e9a45f','#e8eebe',1);
+   rr(bx+bw*(shownCenter-.018),by-5,bw*.036,30,2,'#dae8a2aa');
+   rr(bx+bw*shownPos-2.5,by-9,5,38,3,'#fff6d6');
    ctx.font='bold 11px system-ui';ctx.fillStyle='#f8e9c2';ctx.fillText('PERFECT 區域',px,by+43);
  }
 
@@ -447,7 +471,8 @@ function drawCan(px,base,t,tm,sc=1){ctx.save();ctx.translate(px+Math.sin(tm*23)*
  const p=clamp(t,0,1),over=clamp((t-1)/.62,0,1);
  // approximate smoothly morphed game prop: barrel -> grenade -> squashed metal puck
  const height=208-(p*77)-(over*102);const width=154-p*36+over*65;const y=-height+53;const rad=width/2;const radiusTop=rad*(1-.17*p);const bulge=rad*(.08+.19*p);const bottom=50;
- const bodyGradient=ctx.createLinearGradient(-rad,y,rad,bottom);bodyGradient.addColorStop(0,S.broken?'#344b3b':'#293f31');bodyGradient.addColorStop(.25,S.broken?'#667159':'#7e9972');bodyGradient.addColorStop(.52,S.broken?'#5e6c58':'#657f59');bodyGradient.addColorStop(.79,'#415b43');bodyGradient.addColorStop(1,'#203629');
+ const workshop=['fill','press','shape'].includes(S.phase);
+ const bodyGradient=ctx.createLinearGradient(-rad,y,rad,bottom);bodyGradient.addColorStop(0,S.broken?'#344b3b':'#293f31');bodyGradient.addColorStop(.25,S.broken?'#667159':workshop?'#80916b':'#7e9972');bodyGradient.addColorStop(.52,S.broken?'#5e6c58':workshop?'#708460':'#657f59');bodyGradient.addColorStop(.79,workshop?'#4d6348':'#415b43');bodyGradient.addColorStop(1,'#203629');
  // rear handle near grenade form
  if(p>.59){ctx.globalAlpha=clamp((p-.59)*4,0,1);ctx.strokeStyle='#bac7aa';ctx.lineWidth=8;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(15,y+3);ctx.lineTo(38,y-15);ctx.lineTo(51,y+19);ctx.stroke();ctx.globalAlpha=1}
  // main body shape, top becomes rounded shoulder toward grenade
@@ -473,14 +498,14 @@ function drawCan(px,base,t,tm,sc=1){ctx.save();ctx.translate(px+Math.sin(tm*23)*
    ctx.fillStyle=recess;ctx.fillRect(-radiusTop,y-1,radiusTop*2,22);
    // While pouring, a visible narrow stream crosses the lip and fades into the barrel.
    // Tiny transient splashes mark entry; they do NOT reveal the hidden fill level.
-   if(pouring&&S.phase==='fill'){
+   if(flowVisual>.01&&S.phase==='fill'){
      const innerEnd=y+16;
      for(let i=0;i<25;i++){
        const fall=(tm*255+i*4.7)%19;
        const xi=Math.sin(i*71.9)*((i%4)+1)*1.45;
        const yi=y-3+fall;
        const alpha=clamp((innerEnd-yi)/16,.06,.84);
-       ctx.globalAlpha=alpha*mouthAlpha;
+       ctx.globalAlpha=alpha*mouthAlpha*flowVisual;
        ellipse(xi,yi,.75+(i%3)*.36,1.15+(i%4)*.38,i%3===0?'#ffe8ac':'#d1ac63');
      }
      // Soft scatter on the inner wall makes the falling material visibly land inside.
@@ -488,7 +513,7 @@ function drawCan(px,base,t,tm,sc=1){ctx.save();ctx.translate(px+Math.sin(tm*23)*
        const phase=(tm*5+i*.41)%1;
        const dx=Math.sin(i*9.71)*phase*33;
        const dy=y+7-Math.cos(phase*Math.PI)*3;
-       ctx.globalAlpha=(1-phase)*.32*mouthAlpha;
+       ctx.globalAlpha=(1-phase)*.32*mouthAlpha*flowVisual;
        ellipse(dx,dy,.7+phase*.6,.55,'#f5d99a');
      }
      ctx.globalAlpha=mouthAlpha;
@@ -522,7 +547,7 @@ function drawCan(px,base,t,tm,sc=1){ctx.save();ctx.translate(px+Math.sin(tm*23)*
  if(S.broken){ctx.beginPath();ctx.moveTo(rad*.36,y+height*.2);ctx.lineTo(rad*.17,y+height*.37);ctx.lineTo(rad*.47,y+height*.47);ctx.lineTo(rad*.25,y+height*.65);ctx.strokeStyle='#172a22';ctx.lineWidth=4;ctx.stroke();ctx.strokeStyle='#dcc18e66';ctx.lineWidth=1;ctx.stroke()}
  if(over>.09){ctx.globalAlpha=clamp(over*1.5,0,1);ctx.beginPath();ctx.moveTo(-rad*.43,y+height*.42);ctx.lineTo(rad*.16,y+height*.47);ctx.lineTo(-rad*.09,y+height*.72);ctx.strokeStyle='#d7b487';ctx.lineWidth=3.5;ctx.stroke();ctx.globalAlpha=1}
  // specular highlight
- ctx.globalAlpha=.29;ctx.beginPath();ctx.ellipse(-rad*.57,(y+bottom)/2,8,Math.max(12,height*.23),-.05,0,TAU);ctx.fillStyle='#c8dfa4';ctx.fill();ctx.globalAlpha=1;
+ ctx.globalAlpha=workshop?.16:.29;ctx.beginPath();ctx.ellipse(-rad*.57,(y+bottom)/2,workshop?5:8,Math.max(12,height*.23),-.05,0,TAU);ctx.fillStyle=workshop?'#d3d7ad':'#c8dfa4';ctx.fill();ctx.globalAlpha=1;
  ctx.restore();}
 function sceneField(t){const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#a3b9a5');bg.addColorStop(.49,'#5a8c6b');bg.addColorStop(1,'#1e5237');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
  const x0=W*.5,y0=H*.52;const sky=H*.32;const groundGrad=ctx.createLinearGradient(0,sky,0,H);groundGrad.addColorStop(0,'#7d946b');groundGrad.addColorStop(1,'#305c3d');ctx.fillStyle=groundGrad;ctx.fillRect(0,sky,W,H-sky);
@@ -554,6 +579,9 @@ function render(t){ctx.clearRect(0,0,W,H);if(['aimX','aimZ','flight','blast','en
  }else drawWorkshop(t);}
 
 function loop(ms){const t=ms/1000,actualDt=Math.max(0,lastT?t-lastT:0),dt=Math.min(.055,actualDt);lastT=t;rafTime=t;
+ // Once the full-screen arena takes over, its iframe renders the game. Avoid
+ // painting the concealed workshop every frame; reset the clock on return.
+ if(document.body.classList.contains('arena-live')){requestAnimationFrame(loop);return;}
  if(pouring&&S.phase==='fill'){
    // This is an abstract visual fill system for the game, not real powder compaction data.
    const add=dt*(180+Math.min(110,S.totalPressed*9));
@@ -577,6 +605,8 @@ function loop(ms){const t=ms/1000,actualDt=Math.max(0,lastT?t-lastT:0),dt=Math.m
    WORLD.draw();
  }
 
+ flowVisual=pouring?Math.min(1,flowVisual+dt*12):Math.max(0,flowVisual-dt*11);
+ wheelVisual=Math.max(0,wheelVisual-dt*5);
  if(S.compressT>0)S.compressT=Math.max(0,S.compressT-dt*1.7);if(S.shake>0)S.shake=Math.max(0,S.shake-dt*.94);if(S.spillTime>0)S.spillTime=Math.max(0,S.spillTime-dt);
  if(toastClock&&ms>toastClock){$('toast').classList.remove('show');toastClock=0}
  render(t);requestAnimationFrame(loop)}

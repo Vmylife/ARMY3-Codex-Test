@@ -63,14 +63,15 @@ function cycle(ms){if(disposed)return;requestAnimationFrame(cycle);const game=wi
    stopFlight();flightInstance=null;play('land',.92,.94+Math.random()*.1);
   }
   if(current==='blast'){
-   stopFlight();play('blast',.88,.97+Math.random()*.055);
+   stopFlight();play('blast',.76,.97+Math.random()*.055);
    // The original grenade's low rumble continues underneath this sharp transient.
   }
   if(current==='aimX'||current==='aimZ'){stopFlight();flightInstance=null;meterTravel=0;lastMeterPosition=null;lastMeter=ms}
-  if(current==='end'||current==='intro'){stopFlight();flightInstance=null;meterTravel=0;lastMeterPosition=null;queue=0}
+  if(current==='end'||current==='intro'){stopFlight();flightInstance=null;meterTravel=0;lastMeterPosition=null;queue=0;if(current==='end')play('lock',.34,.82)}
   phase=current;
  }
  if(document.hidden)return;
+ if(muted())stopFlight();
  // Actual release detection: launchFlight() constructs world.flight and changes
  // camPhase to 'flight' only when the right-hand grenade leaves the animation.
  // Don't guess a fixed timer; throwing duration/camera timing can vary.
@@ -99,7 +100,7 @@ function cycle(ms){if(disposed)return;requestAnimationFrame(cycle);const game=wi
  // Building count persists between all three throws. Never replay a destroyed building.
  const count=Math.max(0,Math.floor(Number(game.world.counter?.buildings)||0));
  if(count<lastCount){lastCount=count;queue=0}
- if(count>lastCount){if(current==='blast')queue+=count-lastCount;lastCount=count}
+ if(count>lastCount){if(current==='blast')queue=Math.min(6,queue+count-lastCount);lastCount=count}
  if(current==='blast'&&queue>0&&activeCollapses<2&&ms-lastCollapse>=250){
   const batch=Math.min(queue,3);queue-=batch;lastCollapse=ms;collapseIndex=(collapseIndex+1)%3;
   const variant='collapse'+(collapseIndex+1),played=play(variant,Math.min(.94,.61+.095*batch),.91+Math.random()*.13);
