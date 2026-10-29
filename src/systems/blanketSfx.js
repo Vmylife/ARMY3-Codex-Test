@@ -29,7 +29,7 @@ const AC = window.AudioContext || window.webkitAudioContext;
 const bytes = new Map(), buffers = new Map(), loading = new Map();
 const activePayout = new Set();
 let ctx = null, master = null, alive = true, lastTension = -1e8, lastBlast = -1e8;
-let lastBuilding = -1e8, activeBuildingSounds = 0, buildingIndex = 0;
+let lastBuilding = -1e8, activeBuildingSounds = 0, buildingIndex = 0, activeBlastSounds = 0;
 // One control affects ALL blanket minigame effects, including reused grenade effects.
 const VOLUME_KEY='ARMY3_blanket_sfx_volume_v2';
 const ORIGINAL_GAIN=.67;  // 100% matches v1.61's previous sound level.
@@ -166,7 +166,7 @@ on('army:blanket:land', e => {
   const layers = Math.max(1, Number(e.detail?.layers || 1));
   // Restore the familiar v1.61 cloth landing variations. No electronic quality replacements.
   const variant = 1 + Math.floor(Math.random() * 4);
-  const v = Math.min(.75, .49 + Math.log1p(layers) * .047);
+  const v = Math.min(.72, .52 + Math.log1p(layers) * .042);
   play('land' + variant, v, .94 + Math.random() * .11);
   if (accuracy > .6 && Math.random() < .25) play('tension', .16, 1.12);
   // The actual game shows PERFECT for offset < .24 after the third layer.
@@ -187,9 +187,11 @@ on('army:blanket:blast', () => {
   blanketMusic.duck(1700,.18);
   const now = performance.now();
   // Chain reactions play, but very rapid blasts do not clip each other.
-  const volume = now - lastBlast < 180 ? .40 : .69;
+  const volume = now - lastBlast < 180 ? .32 : .62;
   lastBlast = now;
-  play('blast', volume, .96 + Math.random() * .07);
+  if(activeBlastSounds>=2)return;
+  const voice=play('blast', volume, .96 + Math.random() * .07);
+  if(voice){activeBlastSounds++;voice.src.addEventListener('ended',()=>{activeBlastSounds=Math.max(0,activeBlastSounds-1)},{once:true})}
 });
 on('army:blanket:building', () => {
   blanketMusic.duck(1400,.25);

@@ -42,10 +42,10 @@ const modelPath=o=>cleanPath(o?.model||ASSET_FALLBACK[o?.assetId]);
 function blanketClothShape(o){
  if(o?.category!=='blanket'||!o.clothPower)return {x:1,y:1,z:1};
  const t=Math.max(0,o.clothTime||0);
- const motion=Math.sin(1.27+t*23)*Math.exp(-t*7.8)*o.clothPower;
+ const motion=Math.sin(1.27+t*19)*Math.exp(-t*6.8)*o.clothPower;
  // A military 'tofu blanket' is firm: max ~8% height compression,
  // with a barely visible sideways bulge and one quick return bounce.
- return {x:1+.022*motion,y:1-.077*motion,z:1+.025*motion};
+ return {x:1+.026*motion,y:1-.095*motion,z:1+.028*motion};
 }
 const qualityOf=o=>o.quality==='high'?'high':'low';
 const BY={}; // asset lookup for shared editor shader routines
@@ -169,7 +169,8 @@ function drawModel(o,vp,overridePath=null){
  const u=n=>uniform(p,n);
  gl.uniformMatrix4fv(u('uVP'),false,vp);
  gl.uniformMatrix4fv(u('uModel'),false,modelMatrix(o,m.geo));
- const tint=o.crushed?[.72,.74,.70]:o.broken?[.67,.62,.57]:[1,1,1];
+ // Subtle colour separation keeps the target readable without new lighting or textures.
+ const tint=o.crushed?[.72,.74,.70]:o.broken?[.67,.62,.57]:o.category==='soldier'?[.91,.94,.90]:o.category==='blanket'?[1.06,1.035,1]:[1,1,1];
  gl.uniform3fv(u('uTint'),tint);gl.uniform3fv(u('uInnerColor'),[.42,.41,.38]);gl.uniform1f(u('uRed'),o.team==='enemy'?1:0);
  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,m.tex);gl.uniform1i(u('uTex'),0);
  if(m.geo.skin){
@@ -296,7 +297,8 @@ function drawTopOutline(vp){
  gl.useProgram(flatProgram);lastUsed=flatProgram;
  gl.uniformMatrix4fv(gl.getUniformLocation(flatProgram,'uVP'),false,vp);
  gl.uniformMatrix4fv(gl.getUniformLocation(flatProgram,'uModel'),false,m);
- gl.uniform3f(gl.getUniformLocation(flatProgram,'uColor'),1,.76+Math.min(.20,outlineFlash*.65),.025+Math.min(.27,outlineFlash*.85));
+ const riskTint=cap((lastRisk.value-.45)/.55,0,1);
+ gl.uniform3f(gl.getUniformLocation(flatProgram,'uColor'),1,.76-riskTint*.22+Math.min(.20,outlineFlash*.65),.025+Math.min(.27,outlineFlash*.85));
  gl.bindVertexArray(topOutlineVAO);gl.disable(gl.CULL_FACE);
  gl.drawArrays(gl.TRIANGLES,0,topOutlineCount);gl.enable(gl.CULL_FACE);gl.bindVertexArray(null);
 }
@@ -423,6 +425,7 @@ function landBlanket(){
   beginCollapse(risk,true);return;
  }
  if(accuracy<.24&&stack.length>2)say('PERFECT！',.85);
+ else if(risk.value>.62)say('棉被塔正在傾斜！',1.1);
  if(risk.value>.62)playCreak(risk.value);
  // The next blanket immediately enters: no five-layer cinematic pause.
  spawnFlying();setState('flying');
@@ -579,7 +582,7 @@ function updateGame(dt){
  camPitch=mix(camPitch,pitchGoal,Math.min(1,dt*1.9));
  const desired=collapsing?Math.max(30,26+height*1.40):16.8+height*.68;
  landingKick=Math.max(0,landingKick-dt);
- camDist=mix(camDist,desired-(landingKick>0?1.2*Math.sin(landingKick/.24*Math.PI):0),Math.min(1,dt*2.2));
+ camDist=mix(camDist,desired-(landingKick>0?.85*Math.sin(landingKick/.24*Math.PI):0),Math.min(1,dt*2.2));
  const targetHeight=collapsing?height*.26:Math.max(.9,height*.68);
  camTargetHeight=mix(camTargetHeight,targetHeight,Math.min(1,dt*2.5));
  const move=collapsing?Math.min(height*.45,12):0;
@@ -720,7 +723,8 @@ function tick(now){
   if(ready&&state!=='result'&&state!=='intro'&&state!=='loading')updateGame(dt);
   $('layers').parentElement.classList.toggle('danger',lastRisk.value>.73&&['flying','dropping'].includes(state));
   if($('message').classList.contains('show')&&now>messageEnds)$('message').classList.remove('show');
-  if(ready)draw();
+  // The opaque result covers the scene; retain its last frame while reading.
+  if(ready&&state!=='result')draw();
   requestAnimationFrame(tick);
  }catch(e){console.error('棉被遊戲迴圈失敗',e);fatal(e)}
 }

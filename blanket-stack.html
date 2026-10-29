@@ -23,6 +23,9 @@ html,body,body *,button,span,label,canvas{
 #layers{font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:.3px}.pill small{font-size:12px;color:#c8c9b1;font-weight:700}
 #actions{position:fixed;z-index:6;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom) + 17px);display:flex;justify-content:center;pointer-events:none}
 #cleanup{pointer-events:auto;min-width:min(88vw,285px);height:58px;border:1px solid #eee0a5;border-radius:16px;background:linear-gradient(#efd78f,#e6bd65);color:#2a3327;font-size:20px;font-weight:950;box-shadow:0 8px 20px #15261980}
+#cleanup:active:not(:disabled){transform:translateY(3px);box-shadow:0 3px 8px #15261980}
+#actions::before{content:'結束本輪並收拾';position:absolute;bottom:65px;padding:4px 9px;border-radius:8px;background:#18382bd9;color:#e8e6c6;font-size:11px;font-weight:800;pointer-events:none}
+#tapGuide{position:fixed;z-index:5;left:50%;bottom:calc(env(safe-area-inset-bottom) + 115px);transform:translateX(-50%);padding:7px 11px;border:1px solid #dbca9366;border-radius:10px;background:#1a392ce8;color:#f6e7bd;font-size:13px;font-weight:850;white-space:nowrap;pointer-events:none}
 #message{position:fixed;top:calc(env(safe-area-inset-top) + 85px);left:50%;transform:translateX(-50%);text-align:center;z-index:5;font-size:21px;font-weight:900;text-shadow:0 3px 9px #183222de;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .22s}#message.show{opacity:1}
 #overlay{position:fixed;inset:0;z-index:15;display:flex;align-items:center;justify-content:center;padding:20px;background:#0d2016aa;backdrop-filter:blur(4px)}#overlay[hidden]{display:none}
 .panel{width:min(400px,100%);max-height:90vh;overflow:auto;border-radius:22px;background:#f3f1e4;color:#1d392d;padding:25px 24px 23px;text-align:center;box-shadow:0 17px 60px #02100daa}
@@ -39,16 +42,17 @@ html,body,body *,button,span,label,canvas{
 <div id="boomFlash"></div>
 <div id="hud" hidden><div class="pill">第 <span id="round">1</span> / 3 輪</div><div class="pill"><span id="layers">1</span> <small>層</small></div><div class="pill">收拾 <span id="left">3</span> 次</div></div>
 <div id="message" aria-live="polite"></div>
+<div id="tapGuide" role="status" hidden>點一下畫面，放下棉被</div>
 <div id="actions" hidden><button id="cleanup" type="button">收拾棉被</button></div>
 <div id="overlay"><div class="panel" id="modal"><h1>🛏️ 棉被疊疊樂</h1><p id="loadingText">正在載入操場…</p><span id="loadLine"><span id="loadBar"></span></span><button id="play" disabled>準備中…</button></div></div>
 <div id="fatal" hidden><div><h2>無法載入棉被疊疊樂</h2><p id="reason"></p><button id="reload">重新載入</button></div></div>
 <!-- ARMY3 v1.55 / One-motion airborne supine landing fix. Only this HTML needs replacing. -->
-<script type="module" src="./src/systems/blanketSfx.js?v=170"></script>
+<script type="module" src="./src/systems/blanketSfx.js?v=171"></script>
 <script type="module" src="./src/systems/blanketAchievements.js?v=324"></script>
 <script type="module">
 try {
   // Apply a single continuous supine knockback from the first hit frame. Other game logic stays v1.53.
-  const response = await fetch('./blanket-stack.js?v=153', {cache:'default'});
+  const response = await fetch('./blanket-stack.js?v=154', {cache:'default'});
   if(!response.ok) throw new Error('棉被主程式下載失敗：HTTP '+response.status);
   let source = await response.text();
 
@@ -200,5 +204,13 @@ function hitSoldier(o,originX=foundation.x,originZ=foundation.z,blast=false){`,
   fatal.hidden=false;
   document.getElementById('reload').onclick=()=>location.reload();
 }
+</script>
+<script>
+(()=>{const guide=document.getElementById('tapGuide'),play=document.getElementById('play');let timer;
+ const hide=()=>{guide.hidden=true;clearTimeout(timer)};
+ play.addEventListener('click',()=>{queueMicrotask(()=>{if(document.getElementById('overlay').hidden){guide.hidden=false;clearTimeout(timer);timer=setTimeout(hide,6000)}})});
+ document.getElementById('field').addEventListener('pointerdown',hide,{passive:true});
+ document.getElementById('cleanup').addEventListener('click',hide);
+})();
 </script>
 </body></html>
