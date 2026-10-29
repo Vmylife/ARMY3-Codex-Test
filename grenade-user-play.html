@@ -263,6 +263,21 @@ body.show-stats #counters{display:grid;}
 #craftedPowerBadge{display:flex;align-items:center;gap:7px;border-radius:16px;border:1px solid #e6d09194;background:#10291fe8;padding:9px 12px;color:#f5da94;font-weight:850;font-size:13px;box-shadow:0 4px 15px #0007;backdrop-filter:blur(7px)}
 #craftedPowerBadge strong{font-size:18px;font-variant-numeric:tabular-nums}
 #craftedPowerBadge small{font-size:10px;white-space:nowrap;border-left:1px solid #d0c98a6a;padding-left:8px}
+/* Readable field instructions and opaque military panels keep the scene clear
+   and avoid live backdrop blurs while the 3D world is rendering. */
+#meterH,#meterV,#craftedPowerBadge,#counters>div{backdrop-filter:none;background-color:#1b3025}
+/* Leave room for the existing music control at the top right. */
+#powerDock{right:max(64px,calc(env(safe-area-inset-right) + 52px));max-width:calc(100vw - 76px)}
+#aimInstruction{position:fixed;z-index:6;left:50%;bottom:calc(101px + env(safe-area-inset-bottom));transform:translateX(-50%);padding:6px 11px;border:1px solid #b5bf9270;border-radius:9px;background:#1b3025ed;color:#f2e4b8;font-size:12px;font-weight:800;white-space:nowrap;pointer-events:none}
+#aimInstruction[hidden]{display:none}
+body[data-phase="aimZ"] #aimInstruction{bottom:calc(22px + env(safe-area-inset-bottom))}
+#result{backdrop-filter:none;background:#09150ff0}
+#result .resultCard{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#result .report-topline{padding-right:48px}
+#result .report-stamp{margin-right:48px}
+#result #resultBtns button:active{transform:translateY(2px);filter:brightness(.92)}
+@media(orientation:landscape) and (max-height:530px){#aimInstruction{bottom:calc(76px + env(safe-area-inset-bottom));font-size:10px}body[data-phase="aimZ"] #aimInstruction{bottom:calc(8px + env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){#badge{transition:opacity .15s}}
 </style></head><body>
 <canvas id="world3d"></canvas>
 <header id="top"><div id="titlebar"><div id="logo">💣</div><div id="ttl"><h1>手榴彈｜你的場景 3D 試炸 <span id="version">v1.40 啟動修復</span></h1><div id="caption">你製作的場景 · 投擲動畫 · 跟拍鏡頭 · 爆炸測試</div></div></div><div id="counters"><div><span>摧毀建築</span><strong id="buildings">0</strong></div><div><span>擊殺人數</span><strong id="kills">0</strong></div></div><div id="msg">載入 3D 模型中…</div></header>
@@ -285,6 +300,7 @@ body.show-stats #counters{display:grid;}
  <div class="dir-labels"><span>左翼</span><span>中央</span><span>右翼</span></div>
 </div>
 <div id="meterV" class="hide" aria-label="遠近計量條"><div class="meter-v-title">RANGE</div><div class="meter-v-top">遠</div><div id="needleV"></div><div class="meter-v-bottom">近</div></div>
+<div id="aimInstruction" role="status" aria-live="polite" hidden></div>
 
 
 
@@ -320,8 +336,8 @@ body.show-stats #counters{display:grid;}
 </section>
 
 <script type="module">
-import './grenade-user-play-3d.js?v=138';
-import { ACHIEVEMENTS, calculateReport, readProgress, saveProgress } from './grenade-score.js?v=152';
+import './grenade-user-play-3d.js?v=139';
+import { ACHIEVEMENTS, calculateReport, readProgress, saveProgress } from './grenade-score.js?v=153';
 const $=id=>document.getElementById(id),world=window.GrenadeWorld,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),fmt=n=>Math.floor(n).toLocaleString('en-US');
 // Workshop-to-three-throw handoff: one crafted grenade, one fixed power for all three throws.
 const CRAFT_KEY='ARMY2_grenade_craft_v1';
@@ -339,7 +355,8 @@ let phase='intro',pos=.5,direction=.5,clock=0,x=0,z=50,power=craftedPower,old=pe
 const MAX_THROWS=3;let throwsUsed=0,roundDone=false;
 const badge=t=>{const e=$('badge');e.textContent=t;e.classList.add('show');badgeTimer=performance.now()+1800;};
 function setState(p){
- phase=p;const aiming=p==='aimX'||p==='aimZ';document.body.classList.toggle('aiming',aiming);
+ phase=p;const aiming=p==='aimX'||p==='aimZ';document.body.dataset.phase=p;document.body.classList.toggle('aiming',aiming);
+ const hint=$('aimInstruction');hint.hidden=!aiming;if(aiming)hint.textContent=p==='aimX'?'點畫面鎖定方向':'再點一次決定遠近並投擲';
  document.body.classList.toggle('show-stats',p==='blast'||p==='end');
  $('powerDock').classList.toggle('hide',p==='end');
  $('meterH').classList.toggle('hide',p!=='aimX');
@@ -371,7 +388,15 @@ function reset(newRound=true){
    $('msg').textContent='本局紅軍第 '+(world.redSquadId||1)+' 組（9 人） · 左右選方向、上下選距離';
  }
 }
-let audioCtx=null;function blastSound(){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audioCtx=audioCtx||new AC();if(audioCtx.state==='suspended')audioCtx.resume();const t=audioCtx.currentTime;const n=audioCtx.sampleRate*.9|0,buf=audioCtx.createBuffer(1,n,audioCtx.sampleRate),data=buf.getChannelData(0);for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);const src=audioCtx.createBufferSource(),low=audioCtx.createBiquadFilter(),gain=audioCtx.createGain();src.buffer=buf;low.type='lowpass';low.frequency.setValueAtTime(650,t);low.frequency.exponentialRampToValueAtTime(70,t+.7);gain.gain.setValueAtTime(.48,t);gain.gain.exponentialRampToValueAtTime(.001,t+.83);src.connect(low);low.connect(gain);gain.connect(audioCtx.destination);src.start(t);src.stop(t+.86);const osc=audioCtx.createOscillator(),og=audioCtx.createGain();osc.type='sine';osc.frequency.setValueAtTime(110,t);osc.frequency.exponentialRampToValueAtTime(39,t+.40);og.gain.setValueAtTime(.5,t);og.gain.exponentialRampToValueAtTime(.001,t+.52);osc.connect(og);og.connect(audioCtx.destination);osc.start(t);osc.stop(t+.55);}catch(e){console.warn('Sound',e)}}
+let audioCtx=null,blastNoise=null;function blastSound(){try{
+ // The sampled crack is played by grenadeArenaSfx. This quieter low layer
+ // adds weight without overwhelming it, and follows the same mute setting.
+ try{if(localStorage.getItem('ARMY3_grenade_sfx_muted_v1')==='1')return}catch{}
+ const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audioCtx=audioCtx||new AC();if(audioCtx.state==='suspended')audioCtx.resume();const t=audioCtx.currentTime;
+ if(!blastNoise){const n=audioCtx.sampleRate*.9|0;blastNoise=audioCtx.createBuffer(1,n,audioCtx.sampleRate);const data=blastNoise.getChannelData(0);for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);}
+ const src=audioCtx.createBufferSource(),low=audioCtx.createBiquadFilter(),gain=audioCtx.createGain();src.buffer=blastNoise;low.type='lowpass';low.frequency.setValueAtTime(650,t);low.frequency.exponentialRampToValueAtTime(70,t+.7);gain.gain.setValueAtTime(.16,t);gain.gain.exponentialRampToValueAtTime(.001,t+.83);src.connect(low);low.connect(gain);gain.connect(audioCtx.destination);src.start(t);src.stop(t+.86);
+ const osc=audioCtx.createOscillator(),og=audioCtx.createGain();osc.type='sine';osc.frequency.setValueAtTime(110,t);osc.frequency.exponentialRampToValueAtTime(39,t+.40);og.gain.setValueAtTime(.16,t);og.gain.exponentialRampToValueAtTime(.001,t+.52);osc.connect(og);og.connect(audioCtx.destination);osc.start(t);osc.stop(t+.55);
+ }catch(e){console.warn('Sound',e)}}
 function shoot(){if(throwsUsed>=MAX_THROWS||phase!=='aimZ')return;throwsUsed++;awardWorkshopAchievements(['first-throw']);$('throwCount').textContent='第 '+throwsUsed+' / 3 投';if(!audioCtx){try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume()}catch{}}setState('flight');$('msg').textContent='💣 手榴彈飛行中…';world.playThrow(x,z,(actual)=>{if(phase!=='flight')return;world.setLanding(actual[0],actual[1],true);if(Math.hypot(actual[0]-world.redCenter[0],actual[1]-world.redCenter[1])<=3)awardWorkshopAchievements(['accurate']);world.camPhase='landed';world.landingProgress=0;landingClock=0;setState('landed');$('msg').textContent='💣 手榴彈落地……';});}
 function detonate(){if(phase!=='landed')return;world.beginTestPower(power);world.camPhase='blast';blastSound();setState('blast');$('msg').textContent='💥 衝擊波、爆炸碗罩與地表焦黑正在擴散！';}
 function awardWorkshopAchievements(ids){
@@ -574,7 +599,7 @@ function tick(t){requestAnimationFrame(tick);
  if(phase==='aimX'||phase==='aimZ'){clock+=dt;pos=.5+.5*Math.sin(clock*(phase==='aimX'?3.25:3.77));if(phase==='aimX'){const dirX=24+272*pos;$('grenadeDirectionRay').setAttribute('x2',String(dirX));$('needleHGlow').setAttribute('x2',String(dirX));}else $('needleV').style.top=`${16+(1-pos)*68}%`;positionAimHUD();}
  if(phase==='landed'){landingClock+=dt;world.landingProgress=clamp(landingClock/1.0,0,1);if(landingClock>=1.0)detonate();}
  if(phase==='blast'){
-   $('blastFlash').style.opacity=String(Math.min(.83,Math.exp(-world.timer*4.3)*(.25+Math.log10(world.blastMax+1)*.13)));
+   $('blastFlash').style.opacity=String(Math.min(.48,Math.exp(-world.timer*5.5)*(.22+Math.log10(world.blastMax+1)*.10)));
    const blastFinished=world.advance(dt);
    if(blastFinished){
      if(!resultTimer)resultTimer=t+1500;
@@ -586,7 +611,9 @@ function tick(t){requestAnimationFrame(tick);
    $('buildings').textContent=fmt(world.counter.buildings);$('kills').textContent=fmt(world.counter.kills);
    if(world.radius>40)$('msg').textContent='💥 第 '+throwsUsed+'/3 投：衝擊波擴散中，累計摧毀與擊殺…';
  }
- world.draw();if(world.modelState==='render-failed')reportArenaFailure(world.renderError||'3D 畫面繪製失敗');if(t>badgeTimer)$('badge').classList.remove('show');}
+ // The opaque result report covers the arena; keep the last frame instead of
+ // continuously drawing a hidden 3D scene while the player reads it.
+ if(phase!=='end')world.draw();if(world.modelState==='render-failed')reportArenaFailure(world.renderError||'3D 畫面繪製失敗');if(t>badgeTimer)$('badge').classList.remove('show');}
 let loadingStarted=false,arenaErrorShown=false,readyAnnounced=false;
 function reportArenaFailure(reason){
  if(arenaErrorShown)return;arenaErrorShown=true;

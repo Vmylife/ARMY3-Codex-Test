@@ -318,7 +318,11 @@ class WebWorld{
   const loc={vp:g.getUniformLocation(program,'uVP'),pos:g.getUniformLocation(program,'uCenter'),size:g.getUniformLocation(program,'uSize'),col:g.getUniformLocation(program,'uColor'),alpha:g.getUniformLocation(program,'uAlpha'),hot:g.getUniformLocation(program,'uHot'),time:g.getUniformLocation(program,'uTime')};g.uniformMatrix4fv(loc.vp,false,vp);g.uniform1f(loc.time,this.time);
   g.enable(g.BLEND);g.depthMask(false);g.disable(g.CULL_FACE);
   const blob=(x,y,z,sx,sy,sz,r,gg,b,alpha,hot)=>{if(alpha<=.01)return;g.uniform3f(loc.pos,x,y,z);g.uniform3f(loc.size,sx,sy,sz);g.uniform3f(loc.col,r,gg,b);g.uniform1f(loc.alpha,alpha);g.uniform1f(loc.hot,hot);g.drawArrays(g.TRIANGLES,0,this.fxVertices.length/3);};
-  const kept=this.bursts.slice(-Math.max(6,Math.min(22,Math.floor(500/(dist+6))+12)));
+  // Mobile keeps the same hit events and smoke meshes, but limits simultaneous
+  // cosmetic bursts to reduce transparent overdraw and draw calls.
+  const grenadePolish=!window.__armyShootingView;
+  const burstBudget=grenadePolish&&this.mobileDevice?8:22;
+  const kept=this.bursts.slice(-Math.max(6,Math.min(burstBudget,Math.floor(500/(dist+6))+12)));
   for(const b of kept){if(Math.hypot(b.x-(this.camFocus?.[0]||0),b.z-(this.camFocus?.[1]||0))>dist*1.7+45)continue;
     const t=b.age,hot=clamp(1-t/(b.type==='origin'?1.5:.75),0,1),sz=b.type==='origin'?Math.min(b.size,Math.max(.22,this.radius*.40)):b.size;
     if(t<2.2){g.blendFunc(g.SRC_ALPHA,g.ONE);blob(b.x,.6+sz*.35, b.z,sz*(.24+t*.34),sz*(.30+t*.38),sz*(.24+t*.34),1.,.44+hot*.25,.09,hot*.92,1.);blob(b.x,1+sz*.2,b.z,sz*(.18+t*.21),sz*(.24+t*.22),sz*(.18+t*.21),1.,.85,.28,hot*.65,1.);}
@@ -330,14 +334,14 @@ class WebWorld{
   // only animated the impact point for ~2s, so the rest looked like silent
   // instant building collapse. Keep this visible until the camera leaves land.
   if(this.radius>.18&&this.radius<2400){
-    const rr=this.radius,n=rr<65?20:rr<400?25:30;
+    const rr=this.radius,n=grenadePolish&&this.mobileDevice?(rr<65?12:16):(rr<65?20:rr<400?25:30);
     const sz=Math.max(.48,rr*.19),height=Math.max(.45,rr*.10),phase=this.timer;
     for(let i=0;i<n;i++){
       const ang=2*Math.PI*(i+.16*Math.sin(i*7.31+phase*.8))/n;
       const wobble=.97+.035*Math.sin(i*2.71+phase*3.1),wave=rr*wobble;
       const xx=this.impact[0]+Math.cos(ang)*wave,zz=this.impact[1]+Math.sin(ang)*wave;
       g.blendFunc(g.SRC_ALPHA,g.ONE);
-      blob(xx,height*.58,zz,sz*.84,height*.90,sz*.84,1.,.51+.13*Math.sin(i*3.2+phase*5),.09,.52,1.);
+      blob(xx,height*.58,zz,sz*.84,height*.90,sz*.84,1.,.51+.13*Math.sin(i*3.2+phase*5),.09,grenadePolish?.38:.52,1.);
       if(i%2===0){g.blendFunc(g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA);
         const inner=rr*.82,smokeY=height*(1.1+.28*Math.sin(i*2.2+phase));
         blob(this.impact[0]+Math.cos(ang)*inner,smokeY,this.impact[1]+Math.sin(ang)*inner,sz*.83,sz*.72,sz*.83,.28,.27,.25,.50,0.);
@@ -347,7 +351,7 @@ class WebWorld{
   // A large expanding hemispherical blast bowl rides on top of the ground shock.
   if(this.radius>1.2&&this.radius<2400){
     const shellR=Math.max(2.4,this.radius*.98),shellH=Math.max(.9,Math.min(90,Math.pow(shellR,.78)*.72));
-    const shellAlpha=clamp(.24-(this.radius/Math.max(1,this.blastMax))*.12, .08, .24);
+    const shellAlpha=grenadePolish?clamp(.16-(this.radius/Math.max(1,this.blastMax))*.08,.05,.16):clamp(.24-(this.radius/Math.max(1,this.blastMax))*.12,.08,.24);
     g.blendFunc(g.SRC_ALPHA,g.ONE_MINUS_SRC_ALPHA);
     blob(this.impact[0],shellH*.42,this.impact[1],shellR,shellH,shellR,1.,.56,.12,shellAlpha,.55);
     blob(this.impact[0],shellH*.34,this.impact[1],shellR*.82,shellH*.78,shellR*.82,.24,.21,.19,shellAlpha*.55,0.);
@@ -411,7 +415,7 @@ class WebWorld{
       eye=eye.map((v,i)=>lerp(prev.eye[i],v,k));tgt=tgt.map((v,i)=>lerp(prev.target[i],v,k));
     }
   }
-  if(this.camPhase==='blast'&&this.timer<1.6){const amp=Math.min(1.2,.25+Math.log10(this.blastMax+1)*.13)*Math.exp(-this.timer*2.7);eye[0]+=Math.sin(this.timer*69)*amp;eye[1]+=Math.sin(this.timer*103)*amp*.55;}
+  if(this.camPhase==='blast'&&this.timer<1.6){const amp=window.__armyShootingView?Math.min(1.2,.25+Math.log10(this.blastMax+1)*.13)*Math.exp(-this.timer*2.7):Math.min(.75,.18+Math.log10(this.blastMax+1)*.10)*Math.exp(-this.timer*3.2);eye[0]+=Math.sin(this.timer*69)*amp;eye[1]+=Math.sin(this.timer*103)*amp*.55;}
   this.camFocus=[tgt[0],tgt[2]];this.camDist=dist;
   const vp=mul(pers(54,c.width/c.height,.2,19000),lookAt(eye,tgt));
   this.setupMobileFlightFrustum(vp);
