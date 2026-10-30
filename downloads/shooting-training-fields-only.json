@@ -1,0 +1,1862 @@
+{
+  "format": "army-shooting-scene",
+  "schemaVersion": 1,
+  "exportedAt": "2026-10-30T09:49:12.150Z",
+  "sceneId": "shooting-training-fields-only",
+  "sceneName": "靶場・單戰場・跨欄場｜精簡場景",
+  "map": {
+    "width": 280,
+    "depth": 280,
+    "groundColor": "#adc9a7",
+    "groundStyle": "main-game"
+  },
+  "throwOrigin": {
+    "x": -21,
+    "z": -9
+  },
+  "totalObjects": 59,
+  "items": [
+    {
+      "uid": "main-prop-0",
+      "assetId": "target",
+      "category": "prop",
+      "name": "射擊靶架（可碎裂） #1",
+      "x": 2.1,
+      "z": 22.15,
+      "rot": 180.00002,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.55,
+        1.55,
+        1.55
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.149635,
+        1.478102,
+        0.757594
+      ],
+      "sourcePropIndex": 0,
+      "model": "./assets/props/target.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/target-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-1",
+      "assetId": "target",
+      "category": "prop",
+      "name": "射擊靶架（可碎裂） #2",
+      "x": 5.5,
+      "z": 22.15,
+      "rot": 180.00002,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.55,
+        1.55,
+        1.55
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.149635,
+        1.478102,
+        0.757594
+      ],
+      "sourcePropIndex": 1,
+      "model": "./assets/props/target.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/target-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-2",
+      "assetId": "target",
+      "category": "prop",
+      "name": "射擊靶架（可碎裂） #3",
+      "x": 8.9,
+      "z": 22.15,
+      "rot": 180.00002,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.55,
+        1.55,
+        1.55
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.149635,
+        1.478102,
+        0.757594
+      ],
+      "sourcePropIndex": 2,
+      "model": "./assets/props/target.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/target-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-3",
+      "assetId": "target",
+      "category": "prop",
+      "name": "射擊靶架（可碎裂） #4",
+      "x": 12.3,
+      "z": 22.15,
+      "rot": 180.00002,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.55,
+        1.55,
+        1.55
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.149635,
+        1.478102,
+        0.757594
+      ],
+      "sourcePropIndex": 3,
+      "model": "./assets/props/target.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/target-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-4",
+      "assetId": "target",
+      "category": "prop",
+      "name": "射擊靶架（可碎裂） #5",
+      "x": 15.7,
+      "z": 22.15,
+      "rot": 180.00002,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.55,
+        1.55,
+        1.55
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.149635,
+        1.478102,
+        0.757594
+      ],
+      "sourcePropIndex": 4,
+      "model": "./assets/props/target.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/target-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-5",
+      "assetId": "target",
+      "category": "prop",
+      "name": "射擊靶架（可碎裂） #6",
+      "x": 19.1,
+      "z": 22.15,
+      "rot": 180.00002,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.55,
+        1.55,
+        1.55
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.149635,
+        1.478102,
+        0.757594
+      ],
+      "sourcePropIndex": 5,
+      "model": "./assets/props/target.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/target-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-8",
+      "assetId": "signboard",
+      "category": "prop",
+      "name": "告示牌（可碎裂） #9",
+      "x": 23.814187,
+      "z": 16.499682,
+      "rot": 180.00002,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.9,
+        1.9,
+        1.9
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.818359,
+        1.790528,
+        0.261622
+      ],
+      "sourcePropIndex": 8,
+      "model": "./assets/props/signboard.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/signboard-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-12",
+      "assetId": "hurdle",
+      "category": "prop",
+      "name": "跨欄器材（可碎裂） #13",
+      "x": 5.292865,
+      "z": 9.567353,
+      "rot": 180,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.15,
+        1.15,
+        1.15
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.101148,
+        0.664844,
+        0.610937
+      ],
+      "sourcePropIndex": 12,
+      "model": "./assets/props/hurdle.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/hurdle-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-41",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #42",
+      "x": 3.149128,
+      "z": 2.070553,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 41,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-42",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #43",
+      "x": 4.69646,
+      "z": 2.099148,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 42,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-43",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #44",
+      "x": 2.778295,
+      "z": 3.46992,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 43,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-44",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #45",
+      "x": 3.790355,
+      "z": 3.547635,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 44,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-45",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #46",
+      "x": 2.876515,
+      "z": 4.595447,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 45,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-46",
+      "assetId": "sandbag",
+      "category": "prop",
+      "name": "沙包（手榴彈用） #47",
+      "x": 5.877786,
+      "z": 2.401948,
+      "rot": 89.999981,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.44,
+        1.44,
+        1.44
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.368282,
+        0.442264,
+        0.483047
+      ],
+      "sourcePropIndex": 46,
+      "model": "./assets/props/sandbag.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/sandbag-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-47",
+      "assetId": "sandbag",
+      "category": "prop",
+      "name": "沙包（手榴彈用） #48",
+      "x": 5.828775,
+      "z": 3.933888,
+      "rot": 89.999981,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.44,
+        1.44,
+        1.44
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.368282,
+        0.442264,
+        0.483047
+      ],
+      "sourcePropIndex": 47,
+      "model": "./assets/props/sandbag.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/sandbag-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-48",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #49",
+      "x": 8.5,
+      "z": 5.4,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 48,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-49",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #50",
+      "x": 9.8,
+      "z": 5.4,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 49,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-50",
+      "assetId": "sandbag",
+      "category": "prop",
+      "name": "沙包（手榴彈用） #51",
+      "x": 8,
+      "z": 4,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.44,
+        1.44,
+        1.44
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.368282,
+        0.442264,
+        0.483047
+      ],
+      "sourcePropIndex": 50,
+      "model": "./assets/props/sandbag.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/sandbag-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-51",
+      "assetId": "sandbag",
+      "category": "prop",
+      "name": "沙包（手榴彈用） #52",
+      "x": 10,
+      "z": 4,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.44,
+        1.44,
+        1.44
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.368282,
+        0.442264,
+        0.483047
+      ],
+      "sourcePropIndex": 51,
+      "model": "./assets/props/sandbag.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/sandbag-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-52",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #53",
+      "x": 11.2,
+      "z": 5.5,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 52,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-53",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #54",
+      "x": 11.2,
+      "z": 4.55,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 53,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-54",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #55",
+      "x": 12.7,
+      "z": 1.8,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 54,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-55",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #56",
+      "x": 14,
+      "z": 1.8,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 55,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-56",
+      "assetId": "sandbag",
+      "category": "prop",
+      "name": "沙包（手榴彈用） #57",
+      "x": 12,
+      "z": 2.9,
+      "rot": 89.999981,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.44,
+        1.44,
+        1.44
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.368282,
+        0.442264,
+        0.483047
+      ],
+      "sourcePropIndex": 56,
+      "model": "./assets/props/sandbag.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/sandbag-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-57",
+      "assetId": "sandbag",
+      "category": "prop",
+      "name": "沙包（手榴彈用） #58",
+      "x": 14.8,
+      "z": 2.9,
+      "rot": 89.999981,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.44,
+        1.44,
+        1.44
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.368282,
+        0.442264,
+        0.483047
+      ],
+      "sourcePropIndex": 57,
+      "model": "./assets/props/sandbag.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/sandbag-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-58",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #59",
+      "x": 15.3,
+      "z": 1.5,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 58,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-59",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #60",
+      "x": 16.3,
+      "z": 1.5,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 59,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-60",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #61",
+      "x": 19.4,
+      "z": 5.5,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 60,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-61",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #62",
+      "x": 20.7,
+      "z": 5.5,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 61,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-62",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #63",
+      "x": 19.4,
+      "z": 4.1,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 62,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-63",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #64",
+      "x": 22.3,
+      "z": 5.2,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 63,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-64",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #65",
+      "x": 23.2,
+      "z": 5.2,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 64,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-65",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #66",
+      "x": 22.8,
+      "z": 4.35,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 65,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-66",
+      "assetId": "sandbag",
+      "category": "prop",
+      "name": "沙包（手榴彈用） #67",
+      "x": 18.6,
+      "z": 3,
+      "rot": 89.999981,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.44,
+        1.44,
+        1.44
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.368282,
+        0.442264,
+        0.483047
+      ],
+      "sourcePropIndex": 66,
+      "model": "./assets/props/sandbag.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/sandbag-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-67",
+      "assetId": "sandbag",
+      "category": "prop",
+      "name": "沙包（手榴彈用） #68",
+      "x": 20,
+      "z": 2.5,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.44,
+        1.44,
+        1.44
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.368282,
+        0.442264,
+        0.483047
+      ],
+      "sourcePropIndex": 67,
+      "model": "./assets/props/sandbag.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/sandbag-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-68",
+      "assetId": "sandbag",
+      "category": "prop",
+      "name": "沙包（手榴彈用） #69",
+      "x": 20.2,
+      "z": 0.8,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.44,
+        1.44,
+        1.44
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.368282,
+        0.442264,
+        0.483047
+      ],
+      "sourcePropIndex": 68,
+      "model": "./assets/props/sandbag.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/sandbag-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-69",
+      "assetId": "sandbag",
+      "category": "prop",
+      "name": "沙包（手榴彈用） #70",
+      "x": 22.1,
+      "z": 0.8,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.44,
+        1.44,
+        1.44
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.368282,
+        0.442264,
+        0.483047
+      ],
+      "sourcePropIndex": 69,
+      "model": "./assets/props/sandbag.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/sandbag-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-70",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #71",
+      "x": 23.2,
+      "z": 2.5,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 70,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-71",
+      "assetId": "crate",
+      "category": "prop",
+      "name": "木箱（可碎裂） #72",
+      "x": 23.3,
+      "z": 1.4,
+      "rot": 5.729578,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.25,
+        1.25,
+        1.25
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.193236,
+        0.609741,
+        0.88623
+      ],
+      "sourcePropIndex": 71,
+      "model": "./assets/props/crate.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/crate-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-72",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #73",
+      "x": 18,
+      "z": 1.4,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 72,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-73",
+      "assetId": "barrel",
+      "category": "prop",
+      "name": "紅色爆炸桶 #74",
+      "x": 18,
+      "z": 2.35,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.11,
+        1.11,
+        1.11
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        0.805942,
+        1.054718,
+        0.809736
+      ],
+      "sourcePropIndex": 73,
+      "model": "./assets/props/barrel.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/barrel-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null,
+      "shootingExplosive": true,
+      "shootingTint": [
+        1.6,
+        0.31,
+        0.28
+      ]
+    },
+    {
+      "uid": "main-prop-96",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #97",
+      "x": -13.166667,
+      "z": 27.833333,
+      "rot": 57.528801,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        4.536675,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        4.343957,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 96,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-97",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #98",
+      "x": -9.714286,
+      "z": 26,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        4.771846,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        4.569138,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 97,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-98",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #99",
+      "x": -5.142857,
+      "z": 26,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        4.771846,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        4.569138,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 98,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-99",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #100",
+      "x": -0.571429,
+      "z": 26,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        4.771846,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        4.569138,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 99,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-100",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #101",
+      "x": 4,
+      "z": 26,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        4.771846,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        4.569138,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 100,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-101",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #102",
+      "x": 8.571429,
+      "z": 26,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        4.771846,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        4.569138,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 101,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-102",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #103",
+      "x": 13.142857,
+      "z": 26,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        4.771846,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        4.569138,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 102,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-103",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #104",
+      "x": 17.714286,
+      "z": 26,
+      "rot": 0,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        4.771846,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        4.569138,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 103,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-104",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #105",
+      "x": 21.25,
+      "z": 25.5,
+      "rot": 21.801388,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        2.810629,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        2.691233,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 104,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-105",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #106",
+      "x": 23.75,
+      "z": 24.5,
+      "rot": 21.801388,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        2.810629,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        2.691233,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 105,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-106",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #107",
+      "x": 25.5,
+      "z": 22.25,
+      "rot": 74.054623,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        3.79964,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        3.638231,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 106,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-107",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #108",
+      "x": 26.5,
+      "z": 18.75,
+      "rot": 74.054623,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        3.79964,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        3.638231,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 107,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-108",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #109",
+      "x": 28.25,
+      "z": 16,
+      "rot": 38.659812,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        3.341923,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        3.199958,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 108,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-109",
+      "assetId": "fence",
+      "category": "prop",
+      "name": "圍欄（可碎裂） #110",
+      "x": 30.75,
+      "z": 14,
+      "rot": 38.659812,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        3.341923,
+        5.7,
+        5.7
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        3.199958,
+        1.402736,
+        0.200395
+      ],
+      "sourcePropIndex": 109,
+      "model": "./assets/props/fence.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/fence-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-182",
+      "assetId": "hurdle",
+      "category": "prop",
+      "name": "跨欄器材（可碎裂） #183",
+      "x": 8.842514,
+      "z": 9.544435,
+      "rot": 180,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.15,
+        1.15,
+        1.15
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.101148,
+        0.664844,
+        0.610937
+      ],
+      "sourcePropIndex": 182,
+      "model": "./assets/props/hurdle.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/hurdle-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-183",
+      "assetId": "hurdle",
+      "category": "prop",
+      "name": "跨欄器材（可碎裂） #184",
+      "x": 12.483039,
+      "z": 9.566848,
+      "rot": 180,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.15,
+        1.15,
+        1.15
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.101148,
+        0.664844,
+        0.610937
+      ],
+      "sourcePropIndex": 183,
+      "model": "./assets/props/hurdle.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/hurdle-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-184",
+      "assetId": "hurdle",
+      "category": "prop",
+      "name": "跨欄器材（可碎裂） #185",
+      "x": 15.85978,
+      "z": 9.563066,
+      "rot": 180,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.15,
+        1.15,
+        1.15
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.101148,
+        0.664844,
+        0.610937
+      ],
+      "sourcePropIndex": 184,
+      "model": "./assets/props/hurdle.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/hurdle-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    },
+    {
+      "uid": "main-prop-185",
+      "assetId": "hurdle",
+      "category": "prop",
+      "name": "跨欄器材（可碎裂） #186",
+      "x": 19.253652,
+      "z": 9.5506,
+      "rot": 180,
+      "scale": 1,
+      "quality": "high",
+      "sourceScaleXYZ": [
+        1.15,
+        1.15,
+        1.15
+      ],
+      "sourceY": 0,
+      "useSourceModelUnits": true,
+      "size": [
+        1.101148,
+        0.664844,
+        0.610937
+      ],
+      "sourcePropIndex": 185,
+      "model": "./assets/props/hurdle.glb",
+      "destructible": {
+        "fracturedModel": "./assets/props/destructible/hurdle-fractured.glb",
+        "kind": "mesh-fragments"
+      },
+      "team": null
+    }
+  ]
+}
