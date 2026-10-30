@@ -26,7 +26,7 @@ const clips = {
   debris: '../../assets/audio/grenade/debris_scatter.mp3'
 };
 const AC = window.AudioContext || window.webkitAudioContext;
-const bytes = new Map(), buffers = new Map(), loading = new Map();
+const bytes = new Map(), buffers = new Map(), loading = new Map(), decoding = new Map();
 const activePayout = new Set();
 let ctx = null, master = null, alive = true, lastTension = -1e8, lastBlast = -1e8;
 let lastBuilding = -1e8, activeBuildingSounds = 0, buildingIndex = 0, activeBlastSounds = 0;
@@ -111,28 +111,44 @@ function audioContext() {
 }
 function decode(name, raw) {
   const c = audioContext();
-  if (!c || buffers.has(name)) return;
-  c.decodeAudioData(raw.slice(0)).then(b => buffers.set(name, b))
-    .catch(e => console.warn('[Blanket SFX] decode:', name, e));
+  if (!c) return Promise.resolve(false);
+  if (buffers.has(name)) return Promise.resolve(true);
+  if (decoding.has(name)) return decoding.get(name);
+  const job=c.decodeAudioData(raw.slice(0)).then(b => {buffers.set(name, b);return true;})
+    .catch(e => {console.warn('[Blanket SFX] decode:', name, e);return false;})
+    .finally(()=>decoding.delete(name));
+  decoding.set(name,job);return job;
 }
 function preload(name) {
   if (loading.has(name)) return loading.get(name);
   const promise = fetch(new URL(clips[name], import.meta.url), { cache: 'force-cache' })
     .then(r => { if (!r.ok) throw Error(`HTTP ${r.status}`); return r.arrayBuffer(); })
-    .then(raw => { bytes.set(name, raw); decode(name, raw); return true; })
-    .catch(e => { console.warn('[Blanket SFX] load:', name, e); return false; });
+    .then(raw => { bytes.set(name, raw); return decode(name, raw); })
+    .catch(e => { console.warn('[Blanket SFX] load:', name, e); return false; })
+    .then(ok=>{if(!ok)loading.delete(name);return ok});
   loading.set(name, promise);
   return promise;
 }
 function unlock() {
   const c = audioContext();
-  if (c?.state === 'suspended') c.resume().catch(() => {});
+  if (c && c.state !== 'running' && c.state !== 'closed') c.resume().catch(() => {});
   for (const [name, raw] of bytes) if (!buffers.has(name)) decode(name, raw);
 }
 function play(name, volume = 1, rate = 1, time = undefined, isPayout = false) {
   if (!alive || muted()) return null;
   const c = audioContext(), b = buffers.get(name);
-  if (!c || c.state !== 'running' || !b) { preload(name); return null; }
+  if (!c) return null;
+  if (c.state !== 'running' || !b) {
+    // A just-unlocked iPhone may still be resuming or decoding the first sound.
+    // Retry this event briefly; never play a stale cue after the action has passed.
+    const requested=performance.now();
+    const resumed=c.state!=='running'&&c.state!=='closed'?c.resume().catch(()=>{}):Promise.resolve();
+    Promise.all([preload(name),resumed]).then(()=>{
+      if(alive&&!muted()&&c.state==='running'&&buffers.has(name)&&performance.now()-requested<500)
+        play(name,volume,rate,time,isPayout);
+    });
+    return null;
+  }
   const src = c.createBufferSource(), gain = c.createGain();
   src.buffer = b; src.playbackRate.value = rate;
   gain.gain.value = Math.max(0, Math.min(1, volume));
@@ -166,14 +182,14 @@ on('army:blanket:land', e => {
   const layers = Math.max(1, Number(e.detail?.layers || 1));
   // Restore the familiar v1.61 cloth landing variations. No electronic quality replacements.
   const variant = 1 + Math.floor(Math.random() * 4);
-  const v = Math.min(.72, .52 + Math.log1p(layers) * .042);
+  const v = Math.min(.82, .61 + Math.log1p(layers) * .043);
   play('land' + variant, v, .94 + Math.random() * .11);
   if (accuracy > .6 && Math.random() < .25) play('tension', .16, 1.12);
   // The actual game shows PERFECT for offset < .24 after the third layer.
   // A short bell is an ADDITION, never a substitute for the blanket thud.
   const perfect = Number.isFinite(accuracy) && accuracy < .24 && layers > 2;
   lastQuality = perfect ? 'perfect' : 'normal';
-  if(perfect) play('perfectDing',.50,.98+Math.random()*.035);
+  if(perfect){blanketMusic.duck(420,.72);play('perfectDing',.66,.98+Math.random()*.035);}
 });
 on('army:blanket:topple', () => {
   blanketMusic.duck(2100,.45);
@@ -217,6 +233,7 @@ on('army:blanket:cashout', () => {
 // iPhone Safari unlock: listen in capture phase so the actual touch can resume WebAudio.
 document.addEventListener('pointerdown', unlock, {capture: true, passive: true});
 document.addEventListener('keydown', unlock, {capture: true, passive: true});
+document.addEventListener('click', unlock, {capture: true, passive: true});
 document.addEventListener('visibilitychange', () => {if (document.hidden) stopPayout()});
-window.addEventListener('pagehide', () => {alive = false; stopPayout(); try {ctx?.close()} catch {}});
+window.addEventListener('pagehide', e => {stopPayout();if(!e.persisted){alive = false;try {ctx?.close()} catch {}}});
 for (const name in clips) preload(name);

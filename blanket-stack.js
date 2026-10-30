@@ -42,10 +42,10 @@ const modelPath=o=>cleanPath(o?.model||ASSET_FALLBACK[o?.assetId]);
 function blanketClothShape(o){
  if(o?.category!=='blanket'||!o.clothPower)return {x:1,y:1,z:1};
  const t=Math.max(0,o.clothTime||0);
- const motion=Math.sin(1.27+t*19)*Math.exp(-t*6.8)*o.clothPower;
- // A military 'tofu blanket' is firm: max ~8% height compression,
- // with a barely visible sideways bulge and one quick return bounce.
- return {x:1+.026*motion,y:1-.095*motion,z:1+.028*motion};
+ const motion=Math.cos(t*15)*Math.exp(-t*9)*o.clothPower;
+ // Only the newly landed layer compresses. Horizontal dimensions stay fixed,
+ // so an existing tower does not appear to jump or re-centre on impact.
+ return {x:1,y:1-.06*motion,z:1};
 }
 const qualityOf=o=>o.quality==='high'?'high':'low';
 const BY={}; // asset lookup for shared editor shader routines
@@ -307,7 +307,7 @@ let state='loading',round=1,roundResults=[],collapsingAt=0,collapseDir=[1,0],col
 let collapseAngle=0,collapseSpeed=0,collapseStage='hinge',collapseAxis=[0,1],collapseReleased=0;
 let totalCrushed=0,totalBuildings=0,totalMines=0,roundCrushed=0,roundBuildings=0,roundMines=0;
 let angleChoice=0,camYaw=.12,camDist=17.5,camPitch=.88,camTargetHeight=1.0,camFocus={x:-20.8,z:-2};
-let lastRisk={value:0,dx:0,dz:0},dangerStrikes=0,landingKick=0,outlineFlash=0;
+let lastRisk={value:0,dx:0,dz:0},dangerStrikes=0,landingKick=0,outlineFlash=0,visualSwayBlend=1;
 let ready=false,last=performance.now(),gameTime=0,pendingCelebration=null,messageEnds=0;
 let audioContext=null;
 const originalFoundation=()=>({...foundation,y:foundation.y||0,tiltX:0,tiltZ:0});
@@ -345,7 +345,9 @@ function spawnFlying(){
  const lane=(Math.random()-.5)*(stack.length<5?.7:1.15);
  const target=stack[stack.length-1];const range=6.4+Math.min(3,stack.length*.13);
  const obj={...foundation,uid:'flying',x:target.x-u[0]*range+v[0]*lane,z:target.z-u[1]*range+v[1]*lane,y:stack.length*tierHeight()+1.65,rot:foundation.rot,tiltX:0,tiltZ:0};
- flying={obj,dir:u,side:v,targetX:target.x,targetZ:target.z,lane,dist:-range,range,speed:4.3+Math.min(5.5,stack.length*.18),bob:0};
+ // Preserve the early-game speed; taller towers require more careful timing.
+ const tallTowerSpeed=cap((stack.length-20)*.06,0,1.5);
+ flying={obj,dir:u,side:v,targetX:target.x,targetZ:target.z,lane,dist:-range,range,speed:4.3+Math.min(5.5,stack.length*.18)+tallTowerSpeed,bob:0};
 }
 function dropFlying(){if(state!=='flying'||!flying)return;playTap();falling={o:{...flying.obj},velocity:0,landingY:stack.length*tierHeight(),time:0};flying=null;setState('dropping')}
 // Recoverable arcade balance: weight the RECENT upper tower most strongly.
@@ -396,15 +398,13 @@ function landBlanket(){
  const dropSpeed=falling.velocity;
  landed.y=stack.length*tierHeight();landed.tiltX=0;landed.tiltZ=0;
  stack.push(landed);falling=null;
- const risk=stackRisk();lastRisk=risk;landingKick=.24;outlineFlash=.28;
+ const risk=stackRisk();lastRisk=risk;landingKick=0;outlineFlash=.28;
  const accuracy=previous?Math.hypot(landed.x-previous.x,landed.z-previous.z):3;
- // The newly landed blanket flattens for a split second; the supporting
- // blankets respond with quickly diminishing micro-compression.
+ // Only the newly landed blanket compresses; supporting layers stay still.
  const impactEnergy=cap(.68+dropSpeed*.011,.72,1);
  for(let i=stack.length-1;i>=Math.max(0,stack.length-5);i--){
   const layer=stack[i],d=stack.length-1-i;
-  layer.clothPower=Math.max(layer.clothPower||0,impactEnergy*Math.pow(.49,d));
-  layer.clothTime=0;
+  if(d===0){layer.clothPower=impactEnergy;layer.clothTime=0;}
  }
  playStackImpact(accuracy,stack.length);
  // A dangerous placement gets a chance for a recovery on the next drop.
@@ -582,9 +582,9 @@ function updateGame(dt){
  camPitch=mix(camPitch,pitchGoal,Math.min(1,dt*1.9));
  const desired=collapsing?Math.max(30,26+height*1.40):16.8+height*.68;
  landingKick=Math.max(0,landingKick-dt);
- camDist=mix(camDist,desired-(landingKick>0?.85*Math.sin(landingKick/.24*Math.PI):0),Math.min(1,dt*2.2));
+ camDist=mix(camDist,desired-(landingKick>0?.85*Math.sin(landingKick/.24*Math.PI):0),1-Math.exp(-dt*(collapsing?2.2:1.5)));
  const targetHeight=collapsing?height*.26:Math.max(.9,height*.68);
- camTargetHeight=mix(camTargetHeight,targetHeight,Math.min(1,dt*2.5));
+ camTargetHeight=mix(camTargetHeight,targetHeight,1-Math.exp(-dt*(collapsing?2.5:1.6)));
  const move=collapsing?Math.min(height*.45,12):0;
  camFocus.x=mix(camFocus.x,foundation.x+collapseDir[0]*move,Math.min(1,dt*1.7));
  camFocus.z=mix(camFocus.z,foundation.z+collapseDir[1]*move,Math.min(1,dt*1.7));
@@ -652,8 +652,10 @@ function draw(){
   // Purely visual sub-centimeter oscillation; the stability calculation never changes.
   const wobble=(state==='flying'||state==='dropping')?Math.max(0,lastRisk.value-.36)*Math.min(.85,stack.length*tierHeight()*.095)*i/Math.max(1,stack.length-1)*Math.sin(gameTime*(2.0+lastRisk.value*2)):0;
   const directionLength=Math.hypot(lastRisk.dx,lastRisk.dz)||1;
-  o.swayX=wobble*(Math.abs(lastRisk.dx)>1e-4?lastRisk.dx/directionLength:1);
-  o.swayZ=wobble*lastRisk.dz/directionLength;drawModel(o,vp);
+  const swayX=wobble*(Math.abs(lastRisk.dx)>1e-4?lastRisk.dx/directionLength:1);
+  const swayZ=wobble*lastRisk.dz/directionLength;
+  o.swayX=mix(o.swayX||0,swayX,visualSwayBlend);
+  o.swayZ=mix(o.swayZ||0,swayZ,visualSwayBlend);drawModel(o,vp);
  }
  drawTopOutline(vp);
  if(flying)drawModel(flying.obj,vp);
@@ -720,6 +722,7 @@ function playBlast(){try{
 function tick(now){
  try{
   const dt=Math.min(.05,(now-last)/1000||0);last=now;
+  visualSwayBlend=1-Math.exp(-dt*6);
   if(ready&&state!=='result'&&state!=='intro'&&state!=='loading')updateGame(dt);
   $('layers').parentElement.classList.toggle('danger',lastRisk.value>.73&&['flying','dropping'].includes(state));
   if($('message').classList.contains('show')&&now>messageEnds)$('message').classList.remove('show');

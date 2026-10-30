@@ -47,12 +47,12 @@ html,body,body *,button,span,label,canvas{
 <div id="overlay"><div class="panel" id="modal"><h1>🛏️ 棉被疊疊樂</h1><p id="loadingText">正在載入操場…</p><span id="loadLine"><span id="loadBar"></span></span><button id="play" disabled>準備中…</button></div></div>
 <div id="fatal" hidden><div><h2>無法載入棉被疊疊樂</h2><p id="reason"></p><button id="reload">重新載入</button></div></div>
 <!-- ARMY3 v1.55 / One-motion airborne supine landing fix. Only this HTML needs replacing. -->
-<script type="module" src="./src/systems/blanketSfx.js?v=171"></script>
+<script type="module" src="./src/systems/blanketSfx.js?v=172"></script>
 <script type="module" src="./src/systems/blanketAchievements.js?v=324"></script>
 <script type="module">
 try {
   // Apply a single continuous supine knockback from the first hit frame. Other game logic stays v1.53.
-  const response = await fetch('./blanket-stack.js?v=154', {cache:'default'});
+  const response = await fetch('./blanket-stack.js?v=155', {cache:'default'});
   if(!response.ok) throw new Error('棉被主程式下載失敗：HTTP '+response.status);
   let source = await response.text();
 
