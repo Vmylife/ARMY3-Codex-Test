@@ -705,32 +705,52 @@ async function boot(){
   for(const o of things){if(o.category==='mine')mines.push(o);else if(o.category==='soldier')soldiers.push(o);else if(o.category==='building')buildings.push(o);else if(o.category==='prop')props.push(o)}
   camFocus={x:foundation.x,z:foundation.z};
   initGL();initRings();initTopOutline();
-  // Keep the opening responsive: load the actual blanket first, then mines and soldiers.
-  const priority=[foundation,mines[0],soldiers[0]].filter(Boolean);
-  for(let i=0;i<priority.length;i++){
-   $('loadingText').textContent=['載入棉被模型…','準備骷髏地雷…','準備友軍模型…'][i];
-   $('loadBar').style.width=((i+1)*25)+'%';await ensureModel(priority[i]);
-  }
-  if(!cache.has(modelPath(foundation)))throw Error('棉被 3D 模型未能載入');
-  const group=[...new Map(things.filter(o=>modelPath(o)).map(o=>[modelPath(o),o])).values()]
-    .filter(o=>!cache.has(modelPath(o)))
-    .sort((a,b)=>Math.hypot(a.x-foundation.x,a.z-foundation.z)-Math.hypot(b.x-foundation.x,b.z-foundation.z));
-  const launch=async()=>{let cursor=0;const worker=async()=>{while(cursor<group.length){const o=group[cursor++];await ensureModel(o);await new Promise(r=>setTimeout(r,35))}};await Promise.all([worker(),worker()])};
-  void launch();
-  // Warm the six building fracture sources; a hit does not have to wait for a full download.
-  const fracturePaths=[...new Set(buildings.map(o=>cleanPath(o.destructible?.fracturedModel)).filter(Boolean))];
-  void (async()=>{for(const path of fracturePaths){try{
-   if(fractureCache.has(path))continue;
-   const job=loadGlb(path,{timeoutMs:65000});fractureDataCache.set(path,job);
-   await job;
-  }catch(e){fractureDataCache.delete(path);console.warn('破壞模型預載:',path,e)}}})();
-  // The fallback remains the original hi-poly NPC if a low-poly asset is missing.
-  void ensureModel({model:SOLDIER_LOD_PATH,assetId:'lowSoldier'});
+  // Match the first round's actual camera and renderer culling. In addition to
+  // visible objects, cover a small area around the tower for camera movement.
+  camTargetHeight=1.2;camDist=17.5;camPitch=.88;
+  const openingVP=camera(),openingFar=Math.max(45,camDist*1.65);
+  const distance=o=>Math.hypot(o.x-foundation.x,o.z-foundation.z);
+  const openingVisible=o=>{
+   if(distance(o)>openingFar)return false;
+   const pt=worldToScreen(o.x,Math.min(1.2,(o.size?.[1]||1)*.4),o.z,openingVP);
+   return !!pt&&Math.abs(pt.x)<=1.4&&Math.abs(pt.y)<=1.38;
+  };
+  const byPath=new Map();
+  for(const o of things){const path=modelPath(o);if(path&&(!byPath.has(path)||distance(o)<distance(byPath.get(path))))byPath.set(path,o)}
+  const all=[...byPath.values()];
+  // Choose paths from ALL instances, not just the first instance of each model.
+  const nearPaths=new Set(things.filter(o=>modelPath(o)&&(distance(o)<=24||openingVisible(o))).map(modelPath));
+  const priority=[foundation,...all.filter(o=>nearPaths.has(modelPath(o))),{model:SOLDIER_LOD_PATH,assetId:'lowSoldier'}];
+  const uniquePriority=[...new Map(priority.filter(o=>modelPath(o)).map(o=>[modelPath(o),o])).values()];
+  let cursor=0,completed=0;
+  $('loadingText').textContent='準備附近場景 0 / '+uniquePriority.length+'…';
+  const loadOpening=async()=>{while(cursor<uniquePriority.length){
+   const o=uniquePriority[cursor++],loaded=await ensureModel(o);
+   if(!loaded)throw Error('附近場景模型載入失敗，請重新載入：'+(o.name||modelPath(o)));
+   completed++;$('loadingText').textContent='準備附近場景 '+completed+' / '+uniquePriority.length+'…';
+   $('loadBar').style.width=Math.round(completed/uniquePriority.length*100)+'%';
+  }};
+  // Bound concurrent downloads/decodes on iPhone, while showing real progress.
+  await Promise.all([loadOpening(),loadOpening()]);
+  const group=all.filter(o=>!cache.has(modelPath(o))).sort((a,b)=>distance(a)-distance(b));
+  const launch=async()=>{
+   let next=0;const worker=async()=>{while(next<group.length){await ensureModel(group[next++]);await new Promise(r=>setTimeout(r,35))}};
+   await Promise.all([worker(),worker()]);
+   // Warm fracture data after intact scenery, avoiding a startup decode spike.
+   const fracturePaths=[...new Set(buildings.map(o=>cleanPath(o.destructible?.fracturedModel)).filter(Boolean))];
+   for(const path of fracturePaths){try{
+    if(fractureCache.has(path)||fractureDataCache.has(path)||fracturePending.has(path))continue;
+    const job=loadGlb(path,{timeoutMs:65000});fractureDataCache.set(path,job);
+    await job;
+   }catch(e){fractureDataCache.delete(path);console.warn('破壞模型預載:',path,e)}}
+  };
+  let backgroundStarted=false;
   stack=[originalFoundation()];state='intro';ready=true;
-  $('loadingText').textContent='';$('loadLine').hidden=true;$('play').disabled=false;$('play').textContent='開始挑戰';$('loadBar').style.width='100%';
-  $('play').onclick=()=>{$('overlay').hidden=true;round=1;roundResults=[];totalCrushed=0;totalBuildings=0;totalMines=0;startRound(true)};
-  // Draw a real WebGL frame before unlocking start.
+  // Present one complete frame before allowing the player to start.
   draw();
+  $('loadingText').textContent='';$('loadLine').hidden=true;$('play').disabled=false;$('play').textContent='開始挑戰';$('loadBar').style.width='100%';
+  $('play').onclick=()=>{$('overlay').hidden=true;round=1;roundResults=[];totalCrushed=0;totalBuildings=0;totalMines=0;startRound(true);
+   if(!backgroundStarted){backgroundStarted=true;void launch()}};
  }catch(e){console.error('棉被遊戲初始化失敗',e);fatal(e)}
 }
 canvas.addEventListener('pointerdown',e=>{if(e.cancelable)e.preventDefault();if(state==='flying')dropFlying()},{passive:false});
