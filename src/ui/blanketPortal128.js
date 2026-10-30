@@ -48,7 +48,7 @@ function createPortalMenu({position,kind,panelId,startId,cancelId,destination,on
 }
 export function createBlanketPortal(renderer,{onTrainingStart=()=>{},resuming=false}={}){
  const blanketDraw=makeGroundRing(renderer,BLANKET_PORTAL),grenadeDraw=makeGroundRing(renderer,GRENADE_PORTAL);
- const blanket=createPortalMenu({position:BLANKET_PORTAL,kind:'blanket',panelId:'blanketPortalMenu',startId:'blanketPortalStart',cancelId:'blanketPortalCancel',destination:'./blanket-stack.html?v=156',onStart:()=>onTrainingStart('blanket'),initialDismissed:resuming});
+ const blanket=createPortalMenu({position:BLANKET_PORTAL,kind:'blanket',panelId:'blanketPortalMenu',startId:'blanketPortalStart',cancelId:'blanketPortalCancel',destination:'./blanket-stack.html?v=157',onStart:()=>onTrainingStart('blanket'),initialDismissed:resuming});
  const grenade=createPortalMenu({position:GRENADE_PORTAL,kind:'grenade',panelId:'grenadePortalMenu',startId:'grenadePortalStart',cancelId:'grenadePortalCancel',destination:'./grenade-workshop-test.html?v=153',onStart:()=>onTrainingStart('grenade'),initialDismissed:resuming});
  return {draw(){blanketDraw();grenadeDraw()},update(playerPos,blocked=false){blanket.update(playerPos,blocked);grenade.update(playerPos,blocked)}};
 }

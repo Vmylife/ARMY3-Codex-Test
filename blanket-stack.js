@@ -313,9 +313,9 @@ let audioContext=null;
 const originalFoundation=()=>({...foundation,y:foundation.y||0,tiltX:0,tiltZ:0});
 const tierHeight=()=>foundation.size[1]*foundation.scale;
 function setState(next){state=next;const active=next!=='loading'&&next!=='intro'&&next!=='result';$('hud').hidden=!active;$('actions').hidden=!active;
- $('cleanup').disabled=!(next==='flying'||next==='collapseDone');$('cleanup').textContent=next==='collapseDone'?'收拾倒塌棉被':'收拾棉被';syncHUD()}
+ $('cleanup').disabled=!(next==='flying'||next==='collapseDone');$('cleanup').classList.remove('confirming');$('cleanup').textContent=next==='collapseDone'?'收拾倒塌棉被':'結束本輪';syncHUD()}
 function syncHUD(){$('round').textContent=String(round);$('left').textContent=String(4-round);$('layers').textContent=String(state==='collapsing'||state==='collapseDone'?collapseSavedLayers:stack.length)}
-function say(message,seconds=1.25){$('message').textContent=message;$('message').classList.add('show');messageEnds=performance.now()+seconds*1000}
+function say(message,seconds=1.25){const el=$('message');el.textContent=message;el.classList.toggle('perfect',message==='PERFECT！');el.classList.add('show');messageEnds=performance.now()+seconds*1000}
 function startRound(resetWorld=false){
  // 收拾只清掉棉被塔；被擊飛的友軍、破碎建築、引爆過的地雷與碎片都留在現場。
  // Only the first round of an entirely new game (or the "play again" button)
@@ -345,55 +345,29 @@ function spawnFlying(){
  const lane=(Math.random()-.5)*(stack.length<5?.7:1.15);
  const target=stack[stack.length-1];const range=6.4+Math.min(3,stack.length*.13);
  const obj={...foundation,uid:'flying',x:target.x-u[0]*range+v[0]*lane,z:target.z-u[1]*range+v[1]*lane,y:stack.length*tierHeight()+1.65,rot:foundation.rot,tiltX:0,tiltZ:0};
- // Preserve the early-game speed; taller towers require more careful timing.
- const tallTowerSpeed=cap((stack.length-20)*.06,0,1.5);
- flying={obj,dir:u,side:v,targetX:target.x,targetZ:target.z,lane,dist:-range,range,speed:4.3+Math.min(5.5,stack.length*.18)+tallTowerSpeed,bob:0};
+ flying={obj,dir:u,side:v,targetX:target.x,targetZ:target.z,lane,dist:-range,range,speed:4.3+Math.min(5.5,stack.length*.18),bob:0};
 }
 function dropFlying(){if(state!=='flying'||!flying)return;playTap();falling={o:{...flying.obj},velocity:0,landingY:stack.length*tierHeight(),time:0};flying=null;setState('dropping')}
-// Recoverable arcade balance: weight the RECENT upper tower most strongly.
-// The old test examined each lower support against ALL blocks above it and
-// amplified the result with height. One old offset therefore became almost
-// impossible to correct, and even a perfectly aligned next blanket could fall.
-// This model still punishes drifting away from the foundation, but shifting
-// the next few blankets toward the opposite side genuinely restores balance.
+// Test the centre of the whole load supported by each layer. A lower misplaced
+// layer can therefore matter even after the upper blankets are centred again.
+// Running suffix sums reproduce the historical support calculation in O(n).
 function stackRisk(){
- const halfX=Math.max(.3,foundation.size[0]*foundation.scale*.5);
- const halfZ=Math.max(.3,foundation.size[2]*foundation.scale*.5);
- const base=stack[0];
- let sumX=0,sumZ=0,sumWeight=0,wholeX=0,wholeZ=0;
- const first=Math.max(1,stack.length-7);
- for(let i=1;i<stack.length;i++){
-  const o=stack[i];wholeX+=o.x;wholeZ+=o.z;
-  if(i>=first){
-   // More weight on recent placements => an opposite correction works.
-   const age=stack.length-1-i,w=1/(1+age*.42);
-   sumX+=o.x*w;sumZ+=o.z*w;sumWeight+=w;
-  }
+ const halfX=foundation.size[0]*foundation.scale*.5,halfZ=foundation.size[2]*foundation.scale*.5;
+ let worst=0,dx=0,dz=0,sumX=0,sumZ=0,count=0;
+ for(let i=stack.length-2;i>=0;i--){
+  sumX+=stack[i+1].x;sumZ+=stack[i+1].z;count++;
+  const offsetX=sumX/count-stack[i].x,offsetZ=sumZ/count-stack[i].z;
+  const risk=Math.hypot(offsetX/Math.max(.3,halfX*.91),offsetZ/Math.max(.3,halfZ*.91))*(1+Math.min(.31,count*.013));
+  if(risk>worst){worst=risk;dx=offsetX;dz=offsetZ}
  }
- const n=Math.max(1,stack.length-1);
- const recentX=sumWeight?sumX/sumWeight:base.x,recentZ=sumWeight?sumZ/sumWeight:base.z;
- const overallX=wholeX/n,overallZ=wholeZ/n;
- const dx=(recentX-base.x)*.86+(overallX-base.x)*.14;
- const dz=(recentZ-base.z)*.86+(overallZ-base.z)*.14;
- // Height makes a leaning tower slightly more sensitive; a STRAIGHT tower
- // never becomes unstable merely because it has many layers.
- const heightFactor=1+Math.min(.10,Math.max(0,stack.length-5)*.004);
- const lean=Math.hypot(dx/(halfX*1.12),dz/(halfZ*1.12))*heightFactor;
  const top=stack[stack.length-1],below=stack[stack.length-2];
- let contact=0,contactX=0,contactZ=0;
- if(below){
-  contactX=top.x-below.x;contactZ=top.z-below.z;
-  // Physically unsupported: an almost entirely missed mattress must fall.
-  contact=Math.max(Math.abs(contactX)/(halfX*1.75),Math.abs(contactZ)/(halfZ*1.75));
+ if(below&&(Math.abs(top.x-below.x)>halfX*1.6||Math.abs(top.z-below.z)>halfZ*1.6)){
+  worst=Math.max(worst,2);dx=top.x-below.x;dz=top.z-below.z;
  }
- return {
-  value:Math.max(lean,contact*.76),dx:Math.abs(dx)+Math.abs(dz)>.015?dx:contactX,
-  dz:Math.abs(dx)+Math.abs(dz)>.015?dz:contactZ,contact
- };
+ return {value:worst,dx,dz};
 }
 function landBlanket(){
  const previous=stack[stack.length-1];
- const before=lastRisk.value;
  const landed=falling.o;
  const dropSpeed=falling.velocity;
  landed.y=stack.length*tierHeight();landed.tiltX=0;landed.tiltZ=0;
@@ -407,21 +381,7 @@ function landBlanket(){
   if(d===0){layer.clothPower=impactEnergy;layer.clothTime=0;}
  }
  playStackImpact(accuracy,stack.length);
- // A dangerous placement gets a chance for a recovery on the next drop.
- // Precise landings cannot suddenly destroy an otherwise surviving tower.
- const unsupported=risk.contact>=1;
- const extreme=risk.value>=1.60;
- const worsening=risk.value>before+.045;
- if(risk.value>1.08&&worsening&&accuracy>.28){
-  dangerStrikes+=risk.value>1.35?1.5:1;
- }else if(risk.value<.97||accuracy<.28||risk.value<before-.045){
-  dangerStrikes=Math.max(0,dangerStrikes-1);
- }else{
-  dangerStrikes=Math.max(0,dangerStrikes-.25);
- }
- // Only a severe unsupported overhang, an extreme overall lean or two
- // *worsening* risky placements in a row can cause a real collapse.
- if(unsupported||(accuracy>.28&&(extreme||(risk.value>=1.08&&worsening&&dangerStrikes>=2)))){
+ if(risk.value>=1){
   beginCollapse(risk,true);return;
  }
  if(accuracy<.24&&stack.length>2)say('PERFECT！',.85);

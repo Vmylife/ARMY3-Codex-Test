@@ -187,7 +187,7 @@ on('army:blanket:land', e => {
   if (accuracy > .6 && Math.random() < .25) play('tension', .16, 1.12);
   // The actual game shows PERFECT for offset < .24 after the third layer.
   // A short bell is an ADDITION, never a substitute for the blanket thud.
-  const perfect = Number.isFinite(accuracy) && accuracy < .24 && layers > 2;
+  const perfect = e.detail?.successful !== false && Number.isFinite(accuracy) && accuracy < .24 && layers > 2;
   lastQuality = perfect ? 'perfect' : 'normal';
   if(perfect){blanketMusic.duck(420,.72);play('perfectDing',.66,.98+Math.random()*.035);}
 });
