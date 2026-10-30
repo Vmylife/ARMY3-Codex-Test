@@ -9,11 +9,11 @@ const urls = {
  grenade:'grenade-workshop-test.html'
 };
 const stage1 = [
- 'blanket-stack.html?fromCamp=1&armyPrewarmed=1&v=159','grenade-workshop-test.html?fromCamp=1&armyPrewarmed=1&v=153',
+ 'blanket-stack.html?fromCamp=1&armyPrewarmed=1&v=159','grenade-workshop-test.html?fromCamp=1&armyPrewarmed=1&v=154',
  'assets/audio/minigames/blanket-parade-loop.mp3','assets/audio/minigames/grenade-ordnance-loop.mp3',
- 'src/systems/minigameBgm.js?v=190','src/systems/grenadeEarlyAudio.js?v=191','src/systems/blanketSfx.js?v=173',
- 'src/systems/blanketAchievements.js?v=324','src/systems/grenadeWorkshopSfx.js?v=326',
- 'src/systems/grenadeArenaSfx.js?v=325',
+ 'src/systems/minigameBgm.js?v=190','src/systems/grenadeEarlyAudio.js?v=192','src/systems/blanketSfx.js?v=173',
+ 'src/systems/blanketAchievements.js?v=324','src/systems/grenadeWorkshopSfx.js?v=327',
+ 'src/systems/grenadeArenaSfx.js?v=326',
  'assets/audio/blanket/blanket_drop_fabric.mp3','assets/audio/blanket/blanket_land_1.mp3',
  'assets/audio/blanket/blanket_land_2.mp3','assets/audio/blanket/blanket_land_3.mp3',
  'assets/audio/blanket/blanket_land_4.mp3','assets/audio/blanket/blanket_perfect_ding.mp3',
@@ -31,7 +31,7 @@ const stage1 = [
  'assets/audio/grenade/collapse_3.mp3','assets/audio/grenade/debris_scatter.mp3',
  'assets/audio/grenade/collapse_1.mp3',
  'blanket-stack-scene.json?v=153','grenade-user-scene.json?v=130',
- 'blanket-stack.js?v=158','grenade-user-play.html?embedded=1&v=153',
+ 'blanket-stack.js?v=158','grenade-user-play.html?embedded=1&v=154',
  'grenade-user-play-3d.js?v=139'
 ];
 const status = {blanket:{},grenade:{}};
@@ -146,7 +146,7 @@ function warm(kind){
     // The workshop previously waited for its 3D sub-frame before loading any audio.
     // Boot the original workshop SFX and BGM here, while the player is still walking.
     const script=w.document.createElement('script');script.type='module';
-    script.src=new URL('src/systems/grenadeEarlyAudio.js?v=191',ROOT).href;
+    script.src=new URL('src/systems/grenadeEarlyAudio.js?v=192',ROOT).href;
     w.document.head.append(script);
     // The workshop wraps warmThrowingGame in a private closure. Its own start
     // button is the supported way to start the nested arena warm-up. Restore
@@ -161,7 +161,7 @@ function warm(kind){
   // An older cached return handler may navigate only the iframe. Recover safely.
   try{if(s.frame===frame&&active===kind&&/\/index\.html$/.test(frame.contentWindow.location.pathname))exit()}catch{}
  });
- frame.src=new URL(urls[kind]+'?fromCamp=1&armyPrewarmed=1'+(kind==='grenade'?'&v=153':'&v=159'),ROOT).href;
+ frame.src=new URL(urls[kind]+'?fromCamp=1&armyPrewarmed=1'+(kind==='grenade'?'&v=154':'&v=159'),ROOT).href;
  document.body.appendChild(frame);
 }
 const lastApproach={blanket:0,grenade:0};

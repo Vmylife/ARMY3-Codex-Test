@@ -337,7 +337,7 @@ body[data-phase="aimZ"] #aimInstruction{bottom:calc(22px + env(safe-area-inset-b
 
 <script type="module">
 import './grenade-user-play-3d.js?v=139';
-import { ACHIEVEMENTS, calculateReport, readProgress, saveProgress } from './grenade-score.js?v=153';
+import { ACHIEVEMENTS, calculateReport, readProgress, saveProgress } from './grenade-score.js?v=154';
 const $=id=>document.getElementById(id),world=window.GrenadeWorld,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),fmt=n=>Math.floor(n).toLocaleString('en-US');
 // Workshop-to-three-throw handoff: one crafted grenade, one fixed power for all three throws.
 const CRAFT_KEY='ARMY2_grenade_craft_v1';
@@ -392,10 +392,13 @@ let audioCtx=null,blastNoise=null;function blastSound(){try{
  // The sampled crack is played by grenadeArenaSfx. This quieter low layer
  // adds weight without overwhelming it, and follows the same mute setting.
  try{if(localStorage.getItem('ARMY3_grenade_sfx_muted_v1')==='1')return}catch{}
+ // Trigger the sampled impact on the actual detonation frame, not the next RAF.
+ window.__armyGrenadeArenaSfx?.blast();
+ try{(window.parent!==window?window.parent:window).__armyMinigameBgm_grenade?.duck(750,.10)}catch{}
  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;audioCtx=audioCtx||new AC();if(audioCtx.state==='suspended')audioCtx.resume();const t=audioCtx.currentTime;
  if(!blastNoise){const n=audioCtx.sampleRate*.9|0;blastNoise=audioCtx.createBuffer(1,n,audioCtx.sampleRate);const data=blastNoise.getChannelData(0);for(let i=0;i<n;i++)data[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);}
- const src=audioCtx.createBufferSource(),low=audioCtx.createBiquadFilter(),gain=audioCtx.createGain();src.buffer=blastNoise;low.type='lowpass';low.frequency.setValueAtTime(650,t);low.frequency.exponentialRampToValueAtTime(70,t+.7);gain.gain.setValueAtTime(.16,t);gain.gain.exponentialRampToValueAtTime(.001,t+.83);src.connect(low);low.connect(gain);gain.connect(audioCtx.destination);src.start(t);src.stop(t+.86);
- const osc=audioCtx.createOscillator(),og=audioCtx.createGain();osc.type='sine';osc.frequency.setValueAtTime(110,t);osc.frequency.exponentialRampToValueAtTime(39,t+.40);og.gain.setValueAtTime(.16,t);og.gain.exponentialRampToValueAtTime(.001,t+.52);osc.connect(og);og.connect(audioCtx.destination);osc.start(t);osc.stop(t+.55);
+ const src=audioCtx.createBufferSource(),low=audioCtx.createBiquadFilter(),gain=audioCtx.createGain();src.buffer=blastNoise;low.type='lowpass';low.frequency.setValueAtTime(650,t);low.frequency.exponentialRampToValueAtTime(70,t+.7);gain.gain.setValueAtTime(.11,t);gain.gain.exponentialRampToValueAtTime(.001,t+.83);src.connect(low);low.connect(gain);gain.connect(audioCtx.destination);src.start(t);src.stop(t+.86);
+ const osc=audioCtx.createOscillator(),og=audioCtx.createGain();osc.type='sine';osc.frequency.setValueAtTime(110,t);osc.frequency.exponentialRampToValueAtTime(39,t+.40);og.gain.setValueAtTime(.11,t);og.gain.exponentialRampToValueAtTime(.001,t+.52);osc.connect(og);og.connect(audioCtx.destination);osc.start(t);osc.stop(t+.55);
  }catch(e){console.warn('Sound',e)}}
 function shoot(){if(throwsUsed>=MAX_THROWS||phase!=='aimZ')return;throwsUsed++;awardWorkshopAchievements(['first-throw']);$('throwCount').textContent='第 '+throwsUsed+' / 3 投';if(!audioCtx){try{audioCtx=new (window.AudioContext||window.webkitAudioContext)();audioCtx.resume()}catch{}}setState('flight');$('msg').textContent='💣 手榴彈飛行中…';world.playThrow(x,z,(actual)=>{if(phase!=='flight')return;world.setLanding(actual[0],actual[1],true);if(Math.hypot(actual[0]-world.redCenter[0],actual[1]-world.redCenter[1])<=3)awardWorkshopAchievements(['accurate']);world.camPhase='landed';world.landingProgress=0;landingClock=0;setState('landed');$('msg').textContent='💣 手榴彈落地……';});}
 function detonate(){if(phase!=='landed')return;world.beginTestPower(power);world.camPhase='blast';blastSound();setState('blast');$('msg').textContent='💥 衝擊波、爆炸碗罩與地表焦黑正在擴散！';}

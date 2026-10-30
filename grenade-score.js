@@ -1,6 +1,6 @@
 // 《國軍當兵模擬器》三次投擲累計鑑測：寬鬆評分、速通加分、跨場次榮譽簿。
 // v1.32. Does not modify any 3D animation or damage system.
-import './src/systems/grenadeWorkshopSfx.js?v=326'; // ARMY3 製作階段音效：只接觸 UI 事件，不改評分
+import './src/systems/grenadeWorkshopSfx.js?v=327'; // ARMY3 製作階段音效：只接觸 UI 事件，不改評分
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const int=(n)=>Math.max(0,Math.floor(Number(n)||0));
 export const STORE_KEY='army-grenade-training-v1';
