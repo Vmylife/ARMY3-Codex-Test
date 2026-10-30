@@ -574,6 +574,23 @@ function worldToScreen(x,y,z,vp){
  const w=vp[3]*x+vp[7]*y+vp[11]*z+vp[15];if(w<=.01)return null;
  return{x:(vp[0]*x+vp[4]*y+vp[8]*z+vp[12])/w,y:(vp[1]*x+vp[5]*y+vp[9]*z+vp[13])/w}
 }
+// Buildings can overlap the view even when their centre is outside it. Test a
+// conservative world-space bounding sphere against the camera's side and near
+// planes; keep the existing inexpensive point test for soldiers and props.
+function buildingFrustum(vp){
+ const planes=[];
+ for(const [row,sign] of [[0,1],[0,-1],[1,1],[1,-1],[2,1]]){
+  const a=vp[3]+sign*vp[row],b=vp[7]+sign*vp[4],c=vp[11]+sign*vp[8],d=vp[15]+sign*vp[12];
+  planes.push([a,b,c,d,Math.hypot(a,b,c)]);
+ }
+ return planes;
+}
+function buildingInView(o,planes,extra=0){
+ const size=o.size||[1,1,1],scale=Math.abs(o.scale||1);
+ const radius=Math.hypot(size[0],size[1],size[2])*scale*.55+extra;
+ const y=(o.y??o.sourceY??0)+size[1]*scale*.5;
+ return planes.every(p=>p[0]*o.x+p[1]*y+p[2]*o.z+p[3]>=-radius*p[4]);
+}
 let firstRender=false;
 function camera(){const w=Math.max(1,canvas.clientWidth),h=Math.max(1,canvas.clientHeight),ratio=w/h,portrait=ratio<.8;
  const pitch=camPitch; // close three-quarter gameplay, brief dramatic side reveal
@@ -590,15 +607,20 @@ function draw(){
  gl.viewport(0,0,cw,ch);gl.clearColor(.63,.78,.83,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
  const vp=camera();gl.useProgram(originalGroundProgram);lastUsed=originalGroundProgram;
  gl.uniformMatrix4fv(gl.getUniformLocation(originalGroundProgram,'uVP'),false,vp);gl.bindVertexArray(originalGroundVAO);gl.disable(gl.CULL_FACE);gl.drawArrays(gl.TRIANGLES,0,originalGroundCount);gl.enable(gl.CULL_FACE);
- const far=state==='collapsing'||state==='collapseDone'?105:Math.max(45,camDist*1.65);
+ const far=state==='collapsing'||state==='collapseDone'?105:Math.max(45,camDist*1.65),buildingPlanes=buildingFrustum(vp);
  // NO hard 115-person cap: all 275 placed NPCs are eligible for rendering.
  // For mid/far soldiers, reuse a low-poly mesh instead of drawing 275 high-poly rigs.
  for(const o of things){
   if(o.category==='mine'&&o.ignited)continue;
   const fragmented=o.broken&&o.fragmentsReady&&o.fragments?.length>0;
-  if(Math.hypot(o.x-camFocus.x,o.z-camFocus.z)>far+(fragmented?18:0))continue;
-  const ndc=worldToScreen(o.x,Math.min(1.2,(o.size?.[1]||1)*.4),o.z,vp);
-  if(!ndc||Math.abs(ndc.x)>(fragmented?1.9:1.4)||Math.abs(ndc.y)>(fragmented?1.85:1.38))continue;
+  const buildingRadius=o.category==='building'?Math.hypot(...(o.size||[1,1,1]))*Math.abs(o.scale||1)*.55:0;
+  if(Math.hypot(o.x-camFocus.x,o.z-camFocus.z)>far+(fragmented?18:0)+buildingRadius)continue;
+  if(o.category==='building'){
+   if(!buildingInView(o,buildingPlanes,fragmented?18:0))continue;
+  }else{
+   const ndc=worldToScreen(o.x,Math.min(1.2,(o.size?.[1]||1)*.4),o.z,vp);
+   if(!ndc||Math.abs(ndc.x)>(fragmented?1.9:1.4)||Math.abs(ndc.y)>(fragmented?1.85:1.38))continue;
+  }
   const low=o.category==='soldier'&&!o.crushed&&Math.hypot(o.x-camFocus.x,o.z-camFocus.z)>11&&cache.has(SOLDIER_LOD_PATH);
   if(!cache.has(low?SOLDIER_LOD_PATH:modelPath(o)))continue;
   if(fragmented){drawFragments(o,vp);continue}
@@ -708,10 +730,12 @@ async function boot(){
   // Match the first round's actual camera and renderer culling. In addition to
   // visible objects, cover a small area around the tower for camera movement.
   camTargetHeight=1.2;camDist=17.5;camPitch=.88;
-  const openingVP=camera(),openingFar=Math.max(45,camDist*1.65);
+  const openingVP=camera(),openingPlanes=buildingFrustum(openingVP),openingFar=Math.max(45,camDist*1.65);
   const distance=o=>Math.hypot(o.x-foundation.x,o.z-foundation.z);
   const openingVisible=o=>{
-   if(distance(o)>openingFar)return false;
+   const buildingRadius=o.category==='building'?Math.hypot(...(o.size||[1,1,1]))*Math.abs(o.scale||1)*.55:0;
+   if(distance(o)>openingFar+buildingRadius)return false;
+   if(o.category==='building')return buildingInView(o,openingPlanes);
    const pt=worldToScreen(o.x,Math.min(1.2,(o.size?.[1]||1)*.4),o.z,openingVP);
    return !!pt&&Math.abs(pt.x)<=1.4&&Math.abs(pt.y)<=1.38;
   };
