@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#e8efdf">
-<title>拔草模擬器｜60秒拔草挑戰 v0.6.2</title>
+<title>拔草模擬器｜60秒拔草挑戰 v0.6.3</title>
 <style>
 :root{color-scheme:light;--green:#263f31;--muted:#6e806e;--light:#f8faf4;--edge:#d7e0d0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -78,7 +78,7 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
 <div id="modeGuide">目前：鏟子</div><div id="message"></div><div id="help" class="show">先用鏟子挖鬆土壤，再切換手拔草</div>
 <div id="welcome" class="modal"><div class="card"><div class="big">🌱</div><h2>60 秒拔草挑戰</h2><p>共有三片草地，完成一片自動換下一片。<br>全部清完會出現大草王！<br>剩下的時間瘋狂點擊蓄力，倒數結束後往上拉，看看草根到底有多長。</p><button id="start" class="primary">開始挑戰</button></div></div>
 <div id="finish"><div class="card"><div class="big">🌱</div><h2 id="finishTitle">斬草除根。</h2><p id="report">班長說：旁邊還有一片。</p><button id="again" class="primary">再挑戰一次</button></div></div>
-<div class="version">獨立試玩 · v0.6.2</div>
+<div class="version">獨立試玩 · v0.6.3</div>
 <script>
 
 
@@ -221,7 +221,23 @@ if(showEffect){
 }
 return true;
 }
-function nearestLeaf(screen,limit){let pick=null,best=limit;for(const p of plants){if(p.state!=='live')continue;const pos=project(p.x,p.z,p.tug*.20);const y=pos.y-(p.broken?12:p.height*S*.60),distance=Math.hypot(screen.x-pos.x,(screen.y-y)*.9);if(distance<best){best=distance;pick=p}}return pick}
+function mobileGrassScale(){return W<=560?clamp(1.62-(W-340)*.00108,1.38,1.62):1.12}
+function grassHeight(p){
+ const phase=grassCondition(p),extra=phase==='rotten'?.62:phase==='ready'?.96:1.08;
+ return p.broken?18:p.height*S*mobileGrassScale()*extra;
+}
+function nearestLeaf(screen,limit){
+ let pick=null,best=limit;
+ for(const p of plants){
+  if(p.state!=='live')continue;
+  const pos=project(p.x,p.z,p.tug*.20),h=grassHeight(p),centerY=pos.y-(p.broken?9:h*.45);
+  // Touch targets cover the actual foliage, including large leaves and broken stumps.
+  // Pick the visually closest weed; do not snap shovel hits to the weed.
+  const d=Math.hypot((screen.x-pos.x)*.86,(screen.y-centerY)*.84);
+  if(d<best){best=d;pick=p}
+ }
+ return pick;
+}
 function digSpot(screen){
  // Shovel is ground-directed, not weed-directed. No snapping to grass or foliage.
  return unproject(screen.x,screen.y);
@@ -293,7 +309,7 @@ if(nearby){
 }else UI.tip.textContent='已鏟你點的地面。空地連接不會增加附近草的鏟土次數';
 pointer={id:e.pointerId,type:'shovel',lastX:spot.x,lastZ:spot.z,lastTime:performance.now(),stroke:strokeSerial};}
 }else{
-const weed=nearestLeaf(pos,Math.max(38,S*1.05));
+const weed=nearestLeaf(pos,Math.max(57,S*1.65));
 if(!weed){UI.tip.textContent='請先抓住草葉或斷掉的草根';return}
 const condition=grassCondition(weed);
 if(condition==='stump'){toast('殘根還沒鬆，請再鏟幾下',1350);UI.tip.textContent='把斷掉的根再鏟鬆，才能從土裡拔出';return}
@@ -401,7 +417,7 @@ function wiltLeaf(x,y,dx,dy,width,color){
 }
 function plantAt(p,pt,alpha=1){
  ctx.save();ctx.globalAlpha=alpha;
- const phase=grassCondition(p),baseH=p.height*S,sway=Math.sin(time*2+p.seed);
+ const phase=grassCondition(p),baseH=p.height*S*mobileGrassScale(),sway=Math.sin(time*2+p.seed);
  if(p.broken){
   ctx.strokeStyle=phase==='stump-ready'?'#dfc99e':'#756443';ctx.lineCap='round';ctx.lineWidth=4;
   ctx.beginPath();ctx.moveTo(pt.x,pt.y);ctx.lineTo(pt.x+2,pt.y-10);ctx.stroke();
@@ -548,33 +564,54 @@ function bossPlantAt(x,y,scale=1){
  }
  ctx.restore();
 }
-function bossRootPos(d,origin){
- if(d<84)return{x:origin.x+Math.sin(d*.035)*d*.13,y:origin.y-d*.96};
- const s=d-84,rad=Math.min(W*.37,23+s*.16);
- return{x:origin.x+Math.sin(s*.038)*rad,
-         y:origin.y-84-Math.min(H*.37,s*.21)+Math.cos(s*.053)*Math.min(45,12+s*.035)};
-}
 function drawBossRoot(){
- const origin=project(0,.50),progress=clamp(boss.extractionTime/boss.rootDuration,0,1);
- const drawnLength=Math.max(0,(boss.rootNow/(boss.rootGoal||1))*clamp(240+boss.taps*8,260,2600));
- if(drawnLength<4){bossPlantAt(origin.x,origin.y-S*.08,1);return}
- const count=Math.max(2,Math.ceil(drawnLength/6)),pts=[];
- for(let i=0;i<=count;i++)pts.push(bossRootPos(drawnLength*i/count,origin));
- ctx.save();ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
- for(let i=0;i<pts.length;i++){const q=pts[i];if(i)ctx.lineTo(q.x,q.y);else ctx.moveTo(q.x,q.y)}
- ctx.strokeStyle='#60462f';ctx.lineWidth=14;ctx.stroke();
- ctx.strokeStyle='#d7b68b';ctx.lineWidth=10;ctx.stroke();
- ctx.setLineDash([20,16]);ctx.lineDashOffset=-time*155;
- ctx.strokeStyle='#f1d5a5';ctx.lineWidth=3;ctx.stroke();ctx.setLineDash([]);
- ctx.strokeStyle='#e2c79b';ctx.lineWidth=1.5;
- for(let i=9;i<pts.length;i+=8){
-  const p=pts[i],dir=i%3===0?-1:1;
-  ctx.beginPath();ctx.moveTo(p.x,p.y);
-  ctx.quadraticCurveTo(p.x+dir*15,p.y+7,p.x+dir*21,p.y+14);ctx.stroke();
+ // The boss leaf crown is pulled directly upward and exits the top of the screen.
+ // The root stays at the hole while its highlights and feeder roots STREAM upward.
+ const origin=project(0,.50),sec=boss.extractionTime;
+ const speed=clamp(H*.65+boss.taps*15,430,1800);
+ const lifted=sec*speed;
+ const headY=origin.y-lifted;
+ const streamTop=Math.max(-80,headY);
+ const visibleLength=origin.y-streamTop;
+ if(visibleLength<3){bossPlantAt(origin.x,origin.y,1);return}
+ const wavyX=y=>origin.x+Math.sin(y*.024+sec*16)*3+Math.sin(y*.053-sec*8)*2;
+ ctx.save();
+ ctx.lineCap='round';ctx.lineJoin='round';
+ const n=Math.max(2,Math.ceil(visibleLength/8));
+ ctx.beginPath();
+ for(let i=0;i<=n;i++){
+  const y=origin.y-visibleLength*i/n,x=wavyX(y);
+  if(i)ctx.lineTo(x,y);else ctx.moveTo(x,y);
+ }
+ // Central heavy root with two lighter moving highlights.
+ ctx.shadowColor='#4e3c2b88';ctx.shadowBlur=8;ctx.shadowOffsetX=3;
+ ctx.strokeStyle='#563a2a';ctx.lineWidth=18;ctx.stroke();
+ ctx.shadowBlur=0;ctx.shadowOffsetX=0;
+ ctx.strokeStyle='#cda879';ctx.lineWidth=13;ctx.stroke();
+ ctx.strokeStyle='#f6deb4';ctx.lineWidth=3.3;
+ const travel=sec*clamp(430+boss.taps*20,480,1900);
+ ctx.setLineDash([37,22]);ctx.lineDashOffset=-travel;
+ ctx.stroke();ctx.setLineDash([]);
+ // Secondary fibrous texture scrolls upward. The whole strand never curls or loops.
+ const gap=26,phase=travel%gap;
+ for(let j=0;j<Math.ceil(visibleLength/gap)+2;j++){
+  const dist=j*gap+phase;if(dist<4||dist>=visibleLength-4)continue;
+  const y=origin.y-dist,x=wavyX(y),dir=j%2?1:-1,twig=9+(j%4)*3;
+  ctx.strokeStyle=j%3?'#e6c598':'#a98860';ctx.lineWidth=1.7;
+  ctx.beginPath();ctx.moveTo(x,y);
+  ctx.quadraticCurveTo(x+dir*twig*.76,y+3,x+dir*twig,y+8+(j%3)*3);ctx.stroke();
+ }
+ // Continuous upward motion streaks make the visible root feel like it is being expelled.
+ for(let i=0;i<6;i++){
+  const d=(travel*.82+i*97)%(visibleLength+48);
+  const y=origin.y-d;if(y<streamTop||y>origin.y)continue;
+  ctx.strokeStyle=i%2?'#fff2d099':'#9b754b77';ctx.lineWidth=i%2?1.7:2.2;
+  ctx.beginPath();ctx.moveTo(wavyX(y)+(i%2?5:-5),y);
+  ctx.lineTo(wavyX(y-17)+(i%2?5:-5),y-17);ctx.stroke();
  }
  ctx.restore();
- const tip=pts[pts.length-1];
- bossPlantAt(tip.x,tip.y,.90);
+ // Big crown exits entirely; the root continues erupting for the remaining duration.
+ if(headY>-S*3.5)bossPlantAt(wavyX(headY),headY,.92);
 }
 function drawBoss(){
  const origin=project(0,.50);
@@ -590,7 +627,8 @@ function drawBoss(){
    ctx.strokeStyle='rgba(235,214,144,'+boss.pulse*.46+')';
    ctx.lineWidth=2.8;ctx.beginPath();ctx.ellipse(origin.x,origin.y,50+boss.pulse*40,20+boss.pulse*15,0,0,R);ctx.stroke();
   }
- }else bossPlantAt(origin.x,origin.y,1.1);
+ }else if(runPhase==='bossPull')bossPlantAt(origin.x,origin.y,1.1);
+ // After extraction, do not resurrect the boss behind the results screen.
  ctx.restore();
 }
 function frame(now){
