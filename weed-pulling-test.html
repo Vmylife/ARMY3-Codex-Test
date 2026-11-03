@@ -224,7 +224,7 @@ for(let i=0;i<p.leaves;i++){const off=i-(p.leaves-1)/2,theta=off*.35+Math.sin(p.
 ctx.restore()}
 function groundPlant(p){const pos=project(p.x,p.z,p.tug*.22);oval(pos.x,pos.y+2,12,4,'#3f4c3370');if(p.tug>.01){ctx.strokeStyle='#dcc29a';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(pos.x,pos.y+14);ctx.quadraticCurveTo(pos.x+9,pos.y+4,pos.x,pos.y-7);ctx.stroke()}
 plantAt(p,pos);if(p.need>1&&p.loose>0&&p.loose<p.need){ctx.save();const txt=(p.need-p.loose)+'鏟';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#f8edce';const q=project(p.x,p.z);ctx.beginPath();ctx.roundRect(q.x-17,q.y-p.height*S-28,34,18,7);ctx.fill();ctx.fillStyle='#886331';ctx.fillText(txt,q.x,q.y-p.height*S-15);ctx.restore()}}
-function boundary(g,c,dx,dz){return!g.keys.has(key(c.ix+dx,c.iz+dz))}
+function boundary(g,c,dx,dz){return!g.cellKeys.has(key(c.ix+dx,c.iz+dz))}
 function transformLift(g,x,z,below=false){
 const f=clamp(g.age/g.duration,0,1),pull=smooth((f-.12)/.54),exit=smooth((f-.74)/.26);
 const lift=1.9*pull+2.10*exit+Math.sin(time*18)*.035*pull;
