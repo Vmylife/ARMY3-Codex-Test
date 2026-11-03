@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#e8efdf">
-<title>拔草模擬器｜60秒拔草挑戰 v0.6.6</title>
+<title>拔草模擬器｜60秒拔草挑戰 v0.7</title>
 <style>
 :root{color-scheme:light;--green:#263f31;--muted:#6e806e;--light:#f8faf4;--edge:#d7e0d0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -90,25 +90,95 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
   #modeGuide{bottom:calc(72px + env(safe-area-inset-bottom))}
   #footer{margin-bottom:68px}
 }
+
+/* Clean in-game HUD: only stage/time, weed count, audio and tools remain. */
+#head{justify-content:flex-end}
+#challengebar{left:calc(12px + env(safe-area-inset-left));top:calc(13px + env(safe-area-inset-top));transform:none;min-width:132px;align-items:flex-start;flex-direction:column;gap:0;padding:8px 12px;border-radius:15px;box-shadow:0 5px 16px #52644f15}
+#stageText{font-size:11px;color:#688169;letter-spacing:.03em;line-height:1.4}
+#challengebar .timevalue{line-height:1.15;gap:3px}
+#challengebar .timevalue b{font-size:27px;min-width:0;text-align:left}
+#challengebar .timevalue span{font-size:12px}
+#timeBonus{position:absolute;left:100%;top:27px;margin-left:5px;background:#e2f2df;padding:4px 8px;border-radius:9px;box-shadow:0 3px 9px #477c3a1c}
+#footer,#modeGuide,#help,.version{display:none!important}
+#bossStats{top:calc(110px + env(safe-area-inset-top))}
+@media(max-height:640px){#challengebar{top:calc(9px + env(safe-area-inset-top));padding:6px 10px}#challengebar .timevalue b{font-size:23px}#bossStats{top:calc(86px + env(safe-area-inset-top))}}
+@media(max-width:390px){#challengebar{top:calc(12px + env(safe-area-inset-top));min-width:116px;padding:7px 10px}}
+/* Actual ARMY3 report motif: paper-style sheet, score/grade, achievement ledger and officer comment. */
+#finish{overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;align-items:flex-start;justify-content:center;padding:calc(14px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom));background:#14291cc7;z-index:12}
+.reportPanel{width:min(100%,430px);max-height:calc(100dvh - 28px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch;background:#f8faf2;border:1px solid #ebefdf;border-radius:20px;padding:20px 18px 16px;box-shadow:0 21px 60px #05190e78;color:#2c4332}
+.reportTop{display:flex;justify-content:space-between;gap:8px;font-weight:850;font-size:10px;color:#849380;letter-spacing:.08em;padding-bottom:12px;border-bottom:1px solid #dfe7d9}
+.reportHeading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:15px 0 8px}
+.reportHeading h2{font-weight:950;font-size:24px;line-height:1.22;margin:0 0 5px}
+.reportSub{font-size:12px;color:#87967f;font-weight:750}
+.reportStamp{border:2px solid #b8794e;color:#a86d47;border-radius:7px;padding:8px 7px;font-size:13px;font-weight:950;letter-spacing:.10em;transform:rotate(-9deg);flex-shrink:0}
+.reportScore{display:flex;align-items:baseline;justify-content:center;gap:5px;margin:5px 0 13px;color:#315c41}
+.reportScore strong{font-size:76px;font-weight:950;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.07em}
+.reportScore>span{font-weight:850;font-size:16px}
+.reportScore>b{margin-left:12px;font-size:20px;color:#9a763c}
+.reportStats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:19px}
+.reportStats>div{background:#eef3e8;border:1px solid #e0e8da;border-radius:12px;text-align:center;padding:9px 3px}
+.reportStats small{display:block;color:#7e927a;font-size:10px;font-weight:750;margin-bottom:3px}
+.reportStats b{font-size:23px;font-weight:900;color:#315c41;font-variant-numeric:tabular-nums}
+.reportStats span{font-size:10px;color:#799177;margin-left:3px}
+.reportSectionTitle{display:flex;justify-content:space-between;align-items:baseline;margin:5px 0 10px;gap:8px}
+.reportSectionTitle strong{font-size:15px}.reportSectionTitle small{font-size:11px;color:#859580}
+.achGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.achItem{display:flex;align-items:flex-start;gap:8px;padding:10px 8px;background:#edf3e9;border:1px solid #dce6d7;border-radius:12px;min-width:0}
+.achIcon{font-size:22px;flex-shrink:0;line-height:1.1}
+.achBody{min-width:0;flex:1}
+.achName{font-size:12px;line-height:1.25;font-weight:900;color:#36553a;overflow-wrap:anywhere}
+.achDesc{font-size:10px;line-height:1.5;color:#71846f;margin-top:3px}
+.achItem.isNew{border-color:#c9ad68;background:#faf4df}
+.achItem.isLocked{opacity:.50;filter:grayscale(.85)}
+.achNew{margin-left:4px;font-size:9px;color:#a1732c;font-weight:950}
+.achEmpty{grid-column:1/-1;padding:14px 8px;text-align:center;color:#8b9485;font-size:12px}
+.achGallery{margin:9px 0 18px;border:1px solid #dde8d6;border-radius:11px;background:#f7faf3}
+.achGallery summary{cursor:pointer;list-style:none;padding:11px 12px;font-size:12px;font-weight:850;color:#5d755f;touch-action:manipulation}
+.achGallery summary::-webkit-details-marker{display:none}
+.achGallery summary::after{content:'＋';float:right}
+.achGallery[open] summary::after{content:'－'}
+.achGalleryList{padding:0 9px 10px;max-height:290px;overflow-y:auto;touch-action:pan-y}
+.officerComment{border-radius:13px;background:#eaf0e5;border-left:4px solid #5a8664;padding:12px 14px;margin:15px 0 10px}
+.officerComment small{font-size:11px;color:#658369;font-weight:950}
+.officerComment p{font-size:14px;font-weight:700;color:#2d4a35;line-height:1.6;margin:5px 0 0}
+.reportAgain{width:100%;min-height:48px;font-size:14px;margin-top:9px;border-radius:12px}
+@media(max-width:370px){.reportPanel{padding:16px 12px}.reportScore strong{font-size:65px}.reportStats b{font-size:20px}.achItem{padding:8px 6px;gap:6px}.achIcon{font-size:19px}}
 </style>
 </head>
 <body>
 <canvas id="scene" aria-label="2.5D 拔草遊戲，按住雜草往畫面上方拉"></canvas>
 <div id="hud">
- <div id="head"><div><div class="eyebrow">ARMY / GARDEN · 2.5D</div><h1>拔草模擬器</h1><div class="note">挺立＝沒鬆 · 舒展＝剛好 · 枯黃＝鏟過頭</div></div><div class="headActions"><button id="sound" aria-label="音效開關">🔊 音效</button><div class="counter" id="plantCounter"><b id="done">0</b><small> / <span id="total">0</span> 叢</small></div></div></div>
+ <div id="head"><div class="headActions"><button id="sound" aria-label="音效開關">🔊 音效</button><div class="counter" id="plantCounter"><b id="done">0</b><small> / <span id="total">0</span> 叢</small></div></div></div>
  <div id="challengebar"><div id="stageText">第 1 / 3 片</div><div class="timevalue"><b id="seconds">60.0</b><span>秒</span></div><span id="timeBonus" aria-live="polite"></span></div>
  <div id="bossStats" hidden><b id="tapCount">0</b><span> 次蓄力</span><strong id="rootReadout"></strong></div>
  <div id="bossMeter" aria-live="off" hidden><div class="meterCaption">草根長度 · 正在爆衝</div><div class="meterNumbers"><strong id="bossMeters">0.0</strong><span>m</span></div><div class="meterUnderline"></div></div>
- <div id="footer"><div id="tip">先選鏟子挖土，想拔草再選「手」</div></div>
+ <div id="footer"><div id="tip"></div></div>
  <div id="tools" role="group" aria-label="選擇操作工具">
  <button id="handTool" aria-label="切換成手拔草"><span class="toolIcon">✋</span><span>手</span></button>
  <button id="shovelTool" class="selected" aria-label="切換成鏟子鬆土"><svg class="toolIcon" viewBox="0 0 42 42" aria-hidden="true"><path d="M24 7L14 25" fill="none" stroke="currentColor" stroke-width="4.6" stroke-linecap="round"/><path d="M28.2 4.7l-4.4-2.4-6 10.6 4.4 2.3z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><path d="M13.6 24.6c-3.9 1.4-8.1 4.7-6.9 10.2l7.6 4.3c4.8-3.7 5.6-8.6 4.5-12.3z" fill="currentColor" opacity=".91"/></svg><span>鏟子</span></button>
  </div>
  </div>
-<div id="modeGuide">目前：鏟子</div><div id="message"></div><div id="help" class="show">先用鏟子挖鬆土壤，再切換手拔草</div>
-<div id="welcome" class="modal"><div class="card"><div class="big">🌱</div><h2>60 秒拔草挑戰</h2><p>共有三片草地，完成一片自動換下一片。<br>全部清完會出現大草王！<br>剩下的時間瘋狂點擊蓄力，倒數結束後往上拉，看看草根到底有多長。</p><button id="start" class="primary">開始挑戰</button></div></div>
-<div id="finish"><div class="card"><div class="big">🌱</div><h2 id="finishTitle">斬草除根。</h2><p id="report">班長說：旁邊還有一片。</p><button id="again" class="primary">再挑戰一次</button></div></div>
-<div class="version">獨立試玩 · v0.6.6</div>
+<div id="modeGuide"></div><div id="message"></div><div id="help"></div>
+<div id="welcome" class="modal"><div class="card"><div class="big">🌱</div><h2>60 秒拔草挑戰</h2><p>清空三片草地，挑戰最後的草王。<br>60 秒內拔得越多，越有機會打到 Boss。</p><button id="start" class="primary">開始挑戰</button></div></div>
+<div id="finish" role="dialog" aria-modal="true" aria-labelledby="finishTitle"><div class="reportPanel">
+  <div class="reportTop"><span>國軍拔草鑑測 / 結算報告</span><span>NO. G-003</span></div>
+  <div class="reportHeading"><div><h2 id="finishTitle">拔草鑑測結算</h2><div class="reportSub" id="resultRank">鑑定中</div></div><div id="resultStamp" class="reportStamp">待審</div></div>
+  <div class="reportScore"><strong id="resultScore">0</strong><span>分</span><b id="resultGrade">— 級</b></div>
+  <div class="reportStats">
+    <div><small>清除雜草</small><b id="statCleared">0</b><span>株</span></div>
+    <div><small>完美拔出</small><b id="statPerfect">0</b><span>株</span></div>
+    <div><small>拔斷草根</small><b id="statBroken">0</b><span>株</span></div>
+    <div><small>最大連拔</small><b id="statCombo">0</b><span>株</span></div>
+    <div><small>Boss 狂點</small><b id="statTaps">—</b><span>次</span></div>
+    <div><small>Boss 根長</small><b id="statRoot">—</b><span>m</span></div>
+  </div>
+  <div class="reportSectionTitle"><strong>本次成就</strong><small id="achMeta">—</small></div>
+  <div id="achGrid" class="achGrid"></div>
+  <details id="achGallery" class="achGallery"><summary id="achGallerySummary">🏅 查看全部成就</summary><div id="achGalleryList" class="achGrid achGalleryList"></div></details>
+  <div class="officerComment"><small>班長講評</small><p id="report">等待班長鑑定……</p></div>
+  <button id="again" class="primary reportAgain">再挑戰一次</button>
+</div></div>
+
 <script>
 
 
@@ -127,6 +197,8 @@ let W=0,H=0,DPR=1,S=38,SX=38,SZ=38,baseY=450,time=0,last=0,tool='shovel',plants=
 let pointer=null,total=0,removed=0,brokenTotal=0,toastUntil=0,finishAt=0,audioCtx=null,noise=null,mute=false,seed=Math.random()*999;
 let runPhase='intro',mapNumber=1,deadline=0,remainingMs=DURATION_MS,completedMaps=0,totalWeedsCleared=0,allBreaks=0,bonusDisplayUntil=0;
 let boss={taps:0,pulse:0,extractionTime:0,rootNow:0,rootGoal:0,rootDuration:0,lastSoundAt:0,hitShake:0,hitSparks:[]};
+const newRunStats=()=>({perfect:0,broken:0,recovered:0,overdig:0,maxCombo:0,bonusSeconds:0});
+let runStats=newRunStats();
 const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
 function smooth(x){x=clamp(x,0,1);return x*x*(3-2*x)}
 function key(ix,iz){return ix+','+iz}
@@ -185,7 +257,8 @@ function loadPatch(index){
 }
 function startGame(){
   enableSound();
-  mapNumber=1;completedMaps=0;totalWeedsCleared=0;allBreaks=0;runPhase='field';
+  mapNumber=1;completedMaps=0;totalWeedsCleared=0;allBreaks=0;runStats=newRunStats();runPhase='field';
+  document.getElementById('achGallery').open=false;
   remainingMs=DURATION_MS;deadline=performance.now()+DURATION_MS;
   boss={taps:0,pulse:0,extractionTime:0,rootNow:0,rootGoal:0,rootDuration:0,lastSoundAt:0,hitShake:0,hitSparks:[]};
   bonusDisplayUntil=0;stageUI.timeBonus.classList.remove('show');stageUI.timeBonus.textContent='';
@@ -214,18 +287,92 @@ function timerExpired(){
    toast('時間到！現在可以拔草王！',1850);
    pop(.95);buzz([30,80,25]);
  }else if(runPhase==='field'||runPhase==='transition'){
-   runPhase='result';finishAt=0;pointer=null;
    showResults(false);
  }
 }
+// Army-style field report: grade, stats, witty officer remarks and persistent achievements.
+const ACH_STORE='ARMY3_weed_achievements_v1';
+const ACHIEVEMENTS=[
+ {id:'first',icon:'🪖',name:'報告！我有在拔',desc:'完成第一次拔草鑑測',test:s=>true},
+ {id:'clean1',icon:'🌱',name:'粉刺拔除師',desc:'完整拔出第一株草',test:s=>s.perfect>=1},
+ {id:'clean5',icon:'✨',name:'越拔越上癮',desc:'單局完美拔出 5 株草',test:s=>s.perfect>=5},
+ {id:'clean15',icon:'🎖️',name:'草見你都要敬禮',desc:'單局完美拔出 15 株草',test:s=>s.perfect>=15},
+ {id:'no_break',icon:'🫧',name:'溫柔的破壞王',desc:'拔完三片草地而且沒有拉斷',test:s=>s.maps>=3&&s.broken===0},
+ {id:'break3',icon:'🩹',name:'草的創傷後壓力症',desc:'單局拉斷至少 3 株草',test:s=>s.broken>=3},
+ {id:'break7',icon:'🪓',name:'你在拔草還是在處刑',desc:'單局拉斷至少 7 株草',test:s=>s.broken>=7},
+ {id:'rescued',icon:'🛠️',name:'斷根回收部隊',desc:'清出至少 3 株殘根',test:s=>s.recovered>=3},
+ {id:'overdig',icon:'🧹',name:'再鏟就到地心了',desc:'單局把至少 4 株草鏟爛',test:s=>s.overdig>=4},
+ {id:'combo2',icon:'🔗',name:'一拔兩得',desc:'一次連拔至少 2 株完美草',test:s=>s.maxCombo>=2},
+ {id:'combo4',icon:'💥',name:'草根串燒',desc:'一次連拔至少 4 株完美草',test:s=>s.maxCombo>=4},
+ {id:'bonus5',icon:'⏱️',name:'時間管理班長',desc:'靠完美拔草累積加時 5 秒',test:s=>s.bonusSeconds>=5},
+ {id:'three',icon:'🏕️',name:'寸草不生',desc:'清空全部三片草地',test:s=>s.maps>=3},
+ {id:'boss',icon:'👑',name:'草王退伍令',desc:'親手拔出最終大草王',test:s=>s.won},
+ {id:'tap40',icon:'👆',name:'手機螢幕：我受夠了',desc:'Boss 階段點擊至少 40 次',test:s=>s.taps>=40},
+ {id:'tap100',icon:'🔥',name:'手指已申請職災',desc:'Boss 階段點擊至少 100 次',test:s=>s.taps>=100},
+ {id:'root20',icon:'📏',name:'這根草有祖譜',desc:'Boss 草根長度達 20 公尺',test:s=>s.won&&s.root>=20},
+ {id:'root50',icon:'⛏️',name:'國土重劃局來了',desc:'Boss 草根長度達 50 公尺',test:s=>s.won&&s.root>=50},
+ {id:'root100',icon:'🌎',name:'地心探險家',desc:'Boss 草根長度達 100 公尺',test:s=>s.won&&s.root>=100}
+];
+function getUnlocked(){
+ try{const x=JSON.parse(localStorage.getItem(ACH_STORE)||'[]');return Array.isArray(x)?x:[]}catch{return []}
+}
+function persistUnlocked(ids){
+ try{localStorage.setItem(ACH_STORE,JSON.stringify(ids))}catch{}
+}
+function drawAchievement(a,newly,locked){
+ const el=document.createElement('div');el.className='achItem'+(newly?' isNew':'')+(locked?' isLocked':'');
+ const icon=document.createElement('span');icon.className='achIcon';icon.textContent=locked?'🔒':a.icon;
+ const body=document.createElement('div');body.className='achBody';
+ const name=document.createElement('div');name.className='achName';name.textContent=a.name;
+ if(newly){const newTag=document.createElement('span');newTag.className='achNew';newTag.textContent='NEW';name.append(newTag)}
+ const desc=document.createElement('div');desc.className='achDesc';desc.textContent=a.desc;
+ body.append(name,desc);el.append(icon,body);
+ return el;
+}
+function chooseComment(s){
+ let texts;
+ if(s.won&&s.root>=60)texts=['班長問你拔的是草還是地下電纜，怎麼會這麼長？','你拔的不是草根，是地心引力的耐力測試。','工兵連已經來了，他們說下面可能有石油。'];
+ else if(s.won&&s.taps>=60)texts=['草王都認輸了，你的手指卻還在加班。','你是在拔草還是在跟手機討債？','這點擊速度，班長懷疑你偷帶了電動馬達。'];
+ else if(s.won)texts=['草王已經被你請出來了。班長說明天還有一片。','你拔得很乾淨，但這個動作不要拿去拔班長的頭髮。','恭喜除草結束！剩下的是班長的要求。'];
+ else if(s.maps===0&&s.perfect===0)texts=['60 秒過去了，草地的心情完全沒有受到影響。','草長得好好的，班長的血壓倒是長高了。','你不是在拔草，你是在做土壤田野調查。'];
+ else if(s.broken>=6)texts=['你這不是除草，是給全營區的草做截肢手術。','根還在土裡，班長已經在幫你寫檢討報告。','我只問一次：你跟這片草地有什麼私人恩怨？'];
+ else if(s.perfect>=12)texts=['你拔草的聲音，隔壁連聽了都覺得舒壓。','草看到你過來，已經自動把離營單填好了。','技術很好！可惜拔草不列入榮譽假計算。'];
+ else if(s.maxCombo>=3)texts=['這是一拔多得，還是連根株連九族？','其他人一株一株拔，你直接把草的家族帶走。','班長說要你拔草，沒叫你把親戚都找來。'];
+ else if(s.maps>=2)texts=['就差一點，班長已經幫你預約明天補訓。','你努力過了，但草王表示還沒見到你。','兩片草地已經夠辛苦，第三片留給下一梯？'];
+ else texts=['有拔到草，至少這次不是只會在旁邊喊加油。','這份成績還可以，班長說你明天繼續。','草還沒拔完，太陽都快下山了，辛苦啦。','你在與時間賽跑，草在旁邊看戲。'];
+ return texts[Math.floor(Math.random()*texts.length)];
+}
 function showResults(won){
+ const prior=runPhase;
+ const maps=Math.min(MAPS,completedMaps+(prior==='transition'&&removed>=total?1:0));
+ const cleared=totalWeedsCleared+(won?0:removed);
  runPhase='result';finishAt=0;pointer=null;
- stageUI.finishTitle.textContent=won?'大草王，拔出來了！':'時間到！';
- if(won){
-  UI.report.textContent='完成三片草地，最後狂點 '+boss.taps+' 下，拔出 '+boss.rootGoal.toFixed(1)+' 公尺長的草根！';
- }else{
-  UI.report.textContent='完成 '+completedMaps+' / 3 片草地，共拔掉 '+totalWeedsCleared+' 株。差一點就能挑戰大草王！';
- }
+ const s={won,maps,cleared,perfect:runStats.perfect,broken:runStats.broken,
+  recovered:runStats.recovered,overdig:runStats.overdig,maxCombo:runStats.maxCombo,bonusSeconds:runStats.bonusSeconds,
+  taps:won?boss.taps:0,root:won?boss.rootGoal:0};
+ const score=clamp(Math.round(cleared*1.6+s.perfect*.9+maps*5+(won?10+Math.min(8,s.root*.15):0)-s.broken*2-s.overdig*.6),0,100);
+ const grade=score>=90?'S':score>=75?'A':score>=55?'B':score>=35?'C':score>=20?'D':'F';
+ const labels={S:'國軍之光',A:'鑑測優等',B:'合格新兵',C:'有待加強',D:'繼續努力',F:'明天補訓'};
+ const set=(id,v)=>document.getElementById(id).textContent=String(v);
+ set('finishTitle',won?'拔草鑑測完成':'拔草鑑測結算');
+ set('resultScore',score);set('resultGrade',grade+' 級');
+ set('resultRank','完成 '+maps+' / 3 片草地 · '+labels[grade]);
+ set('resultStamp',won?'草王退役':maps===3?'完成鑑測':'補訓');
+ set('statCleared',s.cleared);set('statPerfect',s.perfect);set('statBroken',s.broken);
+ set('statCombo',s.maxCombo);set('statTaps',maps>=3?s.taps:'—');
+ set('statRoot',won?s.root.toFixed(1):'—');
+ UI.report.textContent=chooseComment(s);
+ const old=getUnlocked(),earned=ACHIEVEMENTS.filter(a=>a.test(s));
+ const fresh=earned.filter(a=>!old.includes(a.id));
+ const ids=[...new Set([...old,...earned.map(a=>a.id)])];persistUnlocked(ids);
+ const grid=document.getElementById('achGrid');grid.replaceChildren();
+ for(const a of earned.slice(0,6))grid.append(drawAchievement(a,fresh.includes(a),false));
+ if(!earned.length){const empty=document.createElement('div');empty.className='achEmpty';empty.textContent='尚未解鎖成就，班長已經在等了。';grid.append(empty)}
+ set('achMeta','達成 '+earned.length+' 項 · 新 '+fresh.length+' 項');
+ set('achGallerySummary','🏅 成就圖鑑 '+ids.length+' / '+ACHIEVEMENTS.length);
+ const gallery=document.getElementById('achGalleryList');gallery.replaceChildren();
+ for(const a of ACHIEVEMENTS)gallery.append(drawAchievement(a,fresh.includes(a),!ids.includes(a.id)));
+ document.getElementById('achGallery').open=false;
  UI.finish.classList.add('show');
 }
 stageUI.start.addEventListener('click',startGame);
@@ -242,7 +389,7 @@ function stamp(x,z,stroke){
  for(const p of plants){if(p.state!=='live'||p.lastStroke===stroke)continue;
    // Terrain smoothing has a wide brush, but only a DIRECT hit at a stem changes grass health.
    // Connecting bare soil must never accidentally count as another shovel hit on nearby grass.
-   if(Math.hypot(p.x-x,p.z-z)<.32){p.loose=Math.min(7,p.loose+1);if(p.broken)p.recoveryDig=Math.min(3,p.recoveryDig+1);p.lastStroke=stroke}}
+   if(Math.hypot(p.x-x,p.z-z)<.32){if(!p.broken&&p.loose===p.need)runStats.overdig++;p.loose=Math.min(7,p.loose+1);if(p.broken)p.recoveryDig=Math.min(3,p.recoveryDig+1);p.lastStroke=stroke}}
 }
 function emit(x,y,count,color='#b49a78',force=1){for(let i=0;i<count;i++){const theta=rand(-Math.PI+.17,-.06),v=rand(30,105)*force;particles.push({x:x+rand(-6,6),y:y+rand(-3,3),vx:Math.cos(theta)*v,vy:Math.sin(theta)*v,gravity:rand(130,300),size:rand(1.3,4.8),color,life:rand(.35,.94),age:0})}if(particles.length>500)particles.splice(0,particles.length-500)}
 function ring(x,y,r=40){rings.push({x,y,r,age:0})}
@@ -314,7 +461,7 @@ UI.tip.textContent='只有剛剛好的草會完整拔出'+(broken?'，其餘 '+b
 }
 function markBroken(p,reason,announce=true){
 if(p.broken)return;
-p.broken=true;p.breakCause=reason;p.recoveryDig=0;p.tug=0;brokenTotal++;
+p.broken=true;p.breakCause=reason;p.recoveryDig=0;p.tug=0;brokenTotal++;runStats.broken++;
 const q=project(p.x,p.z);emit(q.x,q.y-15,10,reason==='rotten'?'#bda676':'#72984a',1);ring(q.x,q.y,24);
 noiseSound(.075,720,.12);pop(.28);buzz([15,60,14]);
 if(announce){
@@ -583,8 +730,10 @@ for(const p of g.members){
  }else p.state='live';
 }
 UI.done.textContent=String(removed);
+runStats.perfect+=perfect;runStats.recovered+=successful-perfect;
+runStats.maxCombo=Math.max(runStats.maxCombo,perfect);
 if(perfect>0&&runPhase==='field'){
-  deadline+=perfect*500;
+  deadline+=perfect*500;runStats.bonusSeconds+=perfect*.5;
   remainingMs=Math.max(0,deadline-performance.now());
   stageUI.timer.textContent=(remainingMs/1000).toFixed(1);
   bonusDisplayUntil=performance.now()+1050;
