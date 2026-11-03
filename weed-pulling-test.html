@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#e8efdf">
-<title>拔草模擬器｜鬆土連根拔 v0.4</title>
+<title>拔草模擬器｜鬆土連根拔 v0.4.1</title>
 <style>
 :root{color-scheme:light;--green:#263f31;--muted:#6e806e;--light:#f8faf4;--edge:#d7e0d0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -62,7 +62,7 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
  </div>
 <div id="modeGuide">目前：鏟子</div><div id="message"></div><div id="help" class="show">先用鏟子挖鬆土壤，再切換手拔草</div>
 <div id="finish"><div class="card"><div class="big">🌱</div><h2>斬草除根。</h2><p id="report">班長說：旁邊還有一片。</p><button id="again" class="primary">再拔一片</button></div></div>
-<div class="version">獨立試玩 · v0.4</div>
+<div class="version">獨立試玩 · v0.4.1</div>
 <script>
 
 
@@ -71,7 +71,7 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
 const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d',{alpha:false});
 const UI={done:document.getElementById('done'),total:document.getElementById('total'),tip:document.getElementById('tip'),toast:document.getElementById('message'),help:document.getElementById('help'),finish:document.getElementById('finish'),report:document.getElementById('report'),guide:document.getElementById('modeGuide'),hand:document.getElementById('handTool'),shovel:document.getElementById('shovelTool')};
 const R=Math.PI*2;
-let W=0,H=0,DPR=1,S=38,baseY=450,time=0,last=0,tool='shovel',plants=[],soilMarks=[],holes=[],groups=[],particles=[],rings=[],shovels=[],strokeSerial=0;
+let W=0,H=0,DPR=1,S=38,baseY=450,time=0,last=0,tool='shovel',plants=[],soilMarks=[],holes=[],groups=[],particles=[],rings=[],shovels=[],strokeSerial=0,lastDigDustAt=-1000,lastDigSoundAt=-1000;
 let pointer=null,total=0,removed=0,toastUntil=0,finishAt=0,audioCtx=null,noise=null,mute=false,seed=Math.random()*999;
 const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
 function smooth(x){x=clamp(x,0,1);return x*x*(3-2*x)}
@@ -90,7 +90,7 @@ function buzz(v){try{if(navigator.vibrate)navigator.vibrate(v)}catch(e){}}
 function toast(text,ms=1350){UI.toast.textContent=text;UI.toast.classList.add('show');toastUntil=performance.now()+ms}
 function makePlant(x,z,type){return{x,z,type,need:type==='tough'?3:1,loose:0,state:'live',broken:false,height:rand(.72,1.19),seed:rand(0,999),leaves:Math.floor(rand(5,9)),tug:0,lastStroke:-1}}
 function newGarden(){
-plants=[];soilMarks=[];holes=[];groups=[];particles=[];rings=[];shovels=[];removed=0;total=0;pointer=null;finishAt=0;seed=Math.random()*900;
+plants=[];soilMarks=[];holes=[];groups=[];particles=[];rings=[];shovels=[];lastDigDustAt=-1000;lastDigSoundAt=-1000;removed=0;total=0;pointer=null;finishAt=0;seed=Math.random()*900;
 UI.finish.classList.remove('show');UI.help.classList.add('show');UI.tip.textContent='先用鏟子挖土，想拔草再選「手」';
 let count=Math.min(20,Math.max(11,Math.floor(W/29))),tries=0;
 while(plants.length<count&&tries++<1200){const x=rand(-3.85,3.85),z=rand(-3.4,3.6);if(!inside(x,z))continue;let valid=true;for(const p of plants){if(Math.hypot((p.x-x)*1.04,(p.z-z)*.9)<.93){valid=false;break}}if(valid)plants.push(makePlant(x,z,Math.random()<.26?'tough':'normal'))}
@@ -111,16 +111,21 @@ function stamp(x,z,stroke){
 }
 function emit(x,y,count,color='#b49a78',force=1){for(let i=0;i<count;i++){const theta=rand(-Math.PI+.17,-.06),v=rand(30,105)*force;particles.push({x:x+rand(-6,6),y:y+rand(-3,3),vx:Math.cos(theta)*v,vy:Math.sin(theta)*v,gravity:rand(130,300),size:rand(1.3,4.8),color,life:rand(.35,.94),age:0})}if(particles.length>500)particles.splice(0,particles.length-500)}
 function ring(x,y,r=40){rings.push({x,y,r,age:0})}
-function dig(x,z,stroke){
+function dig(x,z,stroke,showEffect=true){
 if(!inside(x,z))return false;
 const currentStroke=stroke===undefined?++strokeSerial:stroke;
 stamp(x,z,currentStroke);
-const p=project(x,z);
-shovels.push({x:p.x,y:p.y,age:0});
-emit(p.x,p.y,12,'#a48666',1.11);
-emit(p.x,p.y,5,'#d0b38b',.62);
-ring(p.x,p.y,27);
-digSound();buzz(7);
+// The brush samples many positions per drag, but the shovel is ONE physical tool.
+// Never spawn a copy at each sample; keep the same animated shovel following the tip.
+if(showEffect){
+ const p=project(x,z),now=performance.now();
+ if(shovels.length){const shovel=shovels[0];shovel.x=p.x;shovel.y=p.y;shovel.age=0}
+ else shovels.push({x:p.x,y:p.y,age:0});
+ // Dirt particles, sounds and haptics are throttled separately from soil editing.
+ // Fast dragging still paints continuous soil without dozens of stacked effects.
+ if(now-lastDigDustAt>=80){emit(p.x,p.y,11,'#a48666',1.11);emit(p.x,p.y,4,'#d0b38b',.62);ring(p.x,p.y,26);lastDigDustAt=now}
+ if(now-lastDigSoundAt>=105){digSound();buzz(7);lastDigSoundAt=now}
+}
 return true;
 }
 function nearestLeaf(screen,limit){let pick=null,best=limit;for(const p of plants){if(p.state!=='live')continue;const pos=project(p.x,p.z,p.tug*.20);const y=pos.y-(p.broken?12:p.height*S*.60),distance=Math.hypot(screen.x-pos.x,(screen.y-y)*.9);if(distance<best){best=distance;pick=p}}return pick}
@@ -188,7 +193,7 @@ e.preventDefault();const pos=eventXY(e);
 if(pointer.type==='shovel'){
 const spot=unproject(pos.x,pos.y),dist=Math.hypot(spot.x-pointer.lastX,spot.z-pointer.lastZ);
 if(dist>.32){const steps=Math.min(14,Math.ceil(dist/.31)),x0=pointer.lastX,z0=pointer.lastZ;
-for(let s=1;s<=steps;s++){const at=s/steps;dig(lerp(x0,spot.x,at),lerp(z0,spot.z,at),pointer.stroke)}
+for(let s=1;s<=steps;s++){const at=s/steps;dig(lerp(x0,spot.x,at),lerp(z0,spot.z,at),pointer.stroke,s===steps)}
 pointer.lastX=spot.x;pointer.lastZ=spot.z;pointer.lastTime=performance.now();}
 }else{
 const p=pointer.weed,dy=Math.max(0,pointer.lastY-pos.y);pointer.lastY=pos.y;pointer.dy+=dy;
