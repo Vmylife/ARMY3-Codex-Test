@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#dfe9dc">
+<title>拔草模擬器｜獨立試玩 v0.1</title>
+<style>
+:root{color-scheme:light;--ink:#22392d;--muted:#647b67;--line:#cedbcc;--paper:#f8faf4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;height:100dvh;margin:0;overflow:hidden;background:#e6eee4;font-family:system-ui,-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas:active{cursor:grabbing}
+#ui{position:fixed;inset:0;pointer-events:none;padding:max(17px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;justify-content:space-between}
+header{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.brand{font-size:12px;letter-spacing:.21em;font-weight:800;color:#65806b}
+h1{font-size:23px;letter-spacing:.02em;margin:3px 0 4px;font-weight:850}
+.subtitle{font-size:12px;color:#738777}
+.stats{display:flex;align-items:center;gap:7px;background:#f9fcf4e8;border:1px solid #fff;box-shadow:0 5px 22px #314d3712;border-radius:15px;padding:10px 14px;white-space:nowrap}
+.stats b{font-size:21px;font-variant-numeric:tabular-nums}.stats span{font-size:12px;color:#6c7e6d}
+#rootMeter{align-self:center;margin-top:12vh;padding:11px 20px;background:#fffdf2eb;border:1px solid #faf1c9;border-radius:50px;box-shadow:0 8px 30px #42543a26;text-align:center;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s}
+#rootMeter.show{opacity:1;transform:translateY(0)}
+#rootMeter strong{font-size:24px;font-variant-numeric:tabular-nums;color:#746134}#rootMeter small{display:block;font-size:11px;color:#9b906c;letter-spacing:.08em}
+#bottom{align-self:center;width:min(100%,480px);text-align:center}
+#hint{margin-bottom:12px;font-size:13px;font-weight:700;color:#344f3cc2;text-shadow:0 1px 1px #ffffffbc;min-height:19px}
+.actions{display:flex;justify-content:center;gap:9px;pointer-events:auto}
+button{appearance:none;border:1px solid #d8e1d3;background:#f9fcf4ed;border-radius:14px;box-shadow:0 5px 18px #243a2517;min-height:44px;padding:0 15px;font-size:13px;font-weight:800;color:#405744;cursor:pointer}
+button:active{transform:scale(.97);background:#eff4e8}
+button.special{background:#2d5b41;color:#fff;border-color:#2d5b41}
+#toast{position:fixed;pointer-events:none;left:50%;top:32%;transform:translate(-50%,-10px) scale(.97);opacity:0;transition:opacity .16s,transform .16s;background:#fcfff4ed;color:#2b4933;border-radius:16px;border:1px solid #ffffffec;padding:12px 19px;font-weight:850;font-size:20px;white-space:nowrap;box-shadow:0 12px 36px #24372d24;text-align:center;max-width:94vw}
+#toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+#complete{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#1f392c4a;backdrop-filter:blur(4px);padding:20px}
+#complete.show{display:flex}
+.panel{width:min(92vw,330px);background:#fafcf4;border-radius:24px;text-align:center;padding:31px 25px;box-shadow:0 22px 65px #1a322d55}
+.panel .emoji{font-size:42px}.panel h2{margin:9px 0 7px;font-size:23px}.panel p{font-size:14px;line-height:1.7;color:#6d7c6d}.panel button{margin-top:14px;min-width:170px}
+#version{position:fixed;right:9px;bottom:calc(67px + env(safe-area-inset-bottom));color:#43543c8e;font-size:10px;pointer-events:none}
+@media(max-width:370px){h1{font-size:20px}.stats{padding:8px 10px}.actions{gap:6px}button{padding:0 11px;font-size:12px}}
+@media(max-height:580px){#ui{padding:8px 12px}h1{font-size:17px}.subtitle{display:none}#rootMeter{margin-top:3vh}#hint{margin-bottom:5px}#version{display:none}}
+</style>
+</head>
+<body>
+<canvas id="world" aria-label="拔草遊戲畫面：抓住草葉向上拖曳"></canvas>
+<div id="ui">
+<header><div><div class="brand">ARMY · GARDEN</div><h1>拔草模擬器</h1><div class="subtitle">沒有倒數，只有一根接著一根。</div></div><div class="stats"><div><b id="count">0</b><span> / <span id="total">0</span> 株</span></div></div></header>
+<div id="rootMeter"><small id="rootLabel">這根草不太對勁……</small><strong id="meters">0.0 公尺</strong></div>
+<div id="bottom"><div id="hint">按住一株草，慢慢往上拉 ↑</div><div class="actions"><button id="sound">🔊 聲音開啟</button><button id="long" class="special">試試超長草根</button><button id="reset">換一片草地</button></div></div>
+</div>
+<div id="version">獨立測試版 v0.1</div>
+<div id="toast"></div>
+<div id="complete"><div class="panel"><div class="emoji">🌱</div><h2>這片地，乾淨了。</h2><p id="summary">辛苦了。班長說隔壁還有一片。</p><button id="again" class="special">再拔一片</button></div></div>
+<script>
+(function(){
+'use strict';
+var canvas=document.getElementById('world'),ctx=canvas.getContext('2d',{alpha:false});
+var countEl=document.getElementById('count'),totalEl=document.getElementById('total'),hintEl=document.getElementById('hint'),meterEl=document.getElementById('rootMeter'),metersEl=document.getElementById('meters'),rootLabel=document.getElementById('rootLabel'),toastEl=document.getElementById('toast'),completeEl=document.getElementById('complete');
+var w=0,h=0,dpr=1,ground=0,t=0,last=0,score=0,patch=0,seed=17,toastUntil=0,completeAt=0;
+var weeds=[],particles=[],floaters=[],waves=[],queue=[],active=null,ac=null,noiseBuf=null,muted=false;
+var rand=function(a,b){return a+Math.random()*(b-a)},clamp=function(v,a,b){return Math.max(a,Math.min(b,v))};
+function size(){w=innerWidth;h=innerHeight;dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0);ground=Math.round(h*(h<580?.65:.625))}
+addEventListener('resize',size,{passive:true});size();
+function audioInit(){if(muted)return;try{if(!ac){var C=window.AudioContext||window.webkitAudioContext;ac=new C();noiseBuf=ac.createBuffer(1,Math.round(ac.sampleRate*.26),ac.sampleRate);var a=noiseBuf.getChannelData(0);for(var i=0;i<a.length;i++)a[i]=(Math.random()*2-1)}if(ac.state==='suspended')ac.resume()}catch(e){}}
+function pop(power,delay){if(!ac||muted)return;var at=ac.currentTime+(delay||0),osc=ac.createOscillator(),g=ac.createGain();osc.type='sine';osc.frequency.setValueAtTime(260+rand(-32,36),at);osc.frequency.exponentialRampToValueAtTime(85+rand(-12,14),at+.105);g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(clamp(power*.20,.013,.26),at+.008);g.gain.exponentialRampToValueAtTime(.0001,at+.14);osc.connect(g);g.connect(ac.destination);osc.start(at);osc.stop(at+.15);
+var src=ac.createBufferSource(),f=ac.createBiquadFilter(),v=ac.createGain();src.buffer=noiseBuf;f.type='lowpass';f.frequency.value=850+power*450;v.gain.setValueAtTime(power*.11,at);v.gain.exponentialRampToValueAtTime(.0001,at+.09);src.connect(f);f.connect(v);v.connect(ac.destination);src.start(at);src.stop(at+.10)}
+function fiber(power){if(!ac||muted||!noiseBuf)return;var src=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain(),at=ac.currentTime;src.buffer=noiseBuf;f.type='bandpass';f.frequency.value=530+rand(0,550);f.Q.value=.6;g.gain.setValueAtTime(.0001,at);g.gain.linearRampToValueAtTime(power*.037,at+.008);g.gain.exponentialRampToValueAtTime(.0001,at+.075);src.connect(f);f.connect(g);g.connect(ac.destination);src.start(at);src.stop(at+.08)}
+function notice(message,duration){toastEl.textContent=message;toastEl.classList.add('show');toastUntil=performance.now()+(duration||1550)}
+function vibrate(ms){if(navigator.vibrate)try{navigator.vibrate(ms)}catch(e){}}
+function makeWeed(fx,kind){var isLong=kind==='long',isMass=kind==='mass',height=rand(39,70),maxLen=isLong?rand(10,39):rand(.16,1.4);
+return {fx:fx,kind:kind,height:height,blades:Math.floor(rand(4,8)),shade:Math.random()*2,seed:rand(0,999),pull:0,target:isLong?rand(430,650):isMass?rand(100,137):kind==='tough'?rand(111,158):rand(60,93),meters:maxLen,removed:false,done:false,pops:0,rootProgress:0,ring:0,doneAt:0};}
+function newPatch(){patch++;score=0;weeds=[];particles=[];floaters=[];waves=[];queue=[];active=null;completeAt=0;completeEl.classList.remove('show');meterEl.classList.remove('show');hintEl.textContent='按住一株草，慢慢往上拉 ↑';var n=Math.max(6,Math.min(18,Math.floor(w/56)));var fx=[];for(var i=0;i<n;i++)fx.push((i+.50+rand(-.20,.20))/n);fx.sort(function(){return Math.random()-.5});for(var j=0;j<n;j++){var kind=j===0?'long':j===1?'mass':Math.random()<.16?'tough':'normal';weeds.push(makeWeed(fx[j],kind))}totalEl.textContent=weeds.length;countEl.textContent='0'}
+function groundAt(x){return ground+Math.sin(x*.017)*2.3+Math.sin(x*.048)*1.3}
+function puff(x,y,count,color,power){for(var i=0;i<count;i++){var a=rand(-Math.PI*1.05,.04),speed=rand(18,90)*(power||1);particles.push({x:x+rand(-8,8),y:y+rand(-4,5),vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:rand(.35,.95),age:0,size:rand(1.6,5.4),color:color||'#b49a72',gravity:rand(70,190)})}}
+function kill(weed,via){if(weed.removed)return;weed.removed=true;score++;countEl.textContent=score;var x=weed.fx*w,y=groundAt(x),lift=weed.kind==='long'?174:rand(72,117);floaters.push({x:x,y:y,lift:lift,age:0,life:weed.kind==='long'?1.55:1.0,weed:weed,spin:rand(-.23,.23)});
+puff(x,y,18,'#aa8a62',1.65);puff(x,y-12,10,'#c8b18b',1.2);waves.push({x:x,y:y,r:3,age:0,max:weed.kind==='mass'?75:37});
+if(weed.kind==='long'&&!via){for(var i=0;i<4;i++)pop(.68,i*.065);notice('完整拔出 '+weed.meters.toFixed(1)+' 公尺！',2050);vibrate([18,38,22]);}
+else if(weed.kind==='mass'&&!via){var targets=weeds.filter(function(other){return other!==weed&&!other.removed&&Math.abs(other.fx-weed.fx)*w<Math.min(165,w*.32)});targets.sort(function(a,b){return Math.abs(a.fx-weed.fx)-Math.abs(b.fx-weed.fx)});for(var j=0;j<targets.length;j++)queue.push({weed:targets[j],delay:.10+j*.11});for(var k=0;k<5;k++)pop(.7,k*.063);notice('嘩啦！一整片帶起來！',1750);vibrate([16,32,22]);}
+else{pop(via?.67:weed.kind==='tough'?1.1:.76);if(!via&&weed.kind==='tough')notice('啵！終於拔出來了',1000);vibrate(12)}
+if(score===weeds.length)completeAt=performance.now()+1850;}
+function start(e){if(e.target!==canvas)return;audioInit();var p=point(e),nearest=null,best=Infinity;for(var i=0;i<weeds.length;i++){var v=weeds[i];if(v.removed)continue;var x=v.fx*w,y=groundAt(x),d=Math.hypot((p.x-x)*1.0,(p.y-(y-v.height*.52))*.8);if(d<best){best=d;nearest=v}}
+if(!nearest||best>Math.max(43,Math.min(66,w*.115)))return;
+active={weed:nearest,id:e.pointerId,lastY:p.y,curY:p.y,curX:p.x,initialY:p.y,started:performance.now(),tension:0};try{canvas.setPointerCapture(e.pointerId)}catch(e2){}e.preventDefault();hintEl.textContent='很好，繼續慢慢往上拔…';fiber(.6)}
+function point(e){var r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+function move(e){if(!active||active.id!==e.pointerId)return;e.preventDefault();var p=point(e),v=active.weed,dy=Math.max(0,active.lastY-p.y);active.lastY=p.y;active.curY=p.y;active.curX=p.x;if(dy){var extra=dy*(v.kind==='tough'?.86:1.05);advance(v,extra)}}
+function advance(v,amount){if(!v||v.removed)return;var prev=v.pull;v.pull=Math.min(v.target,v.pull+amount);var step=v.kind==='long'?43:24;var old=Math.floor(prev/step),next=Math.floor(v.pull/step);if(next>old){fiber(v.kind==='long'?.93:.58);if(v.kind==='long'&&next%2===0)pop(.12)}
+if(v.pull>=v.target){active=null;meterEl.classList.remove('show');kill(v,false);hintEl.textContent='再挑下一株，看裡面藏了什麼。'}else if(v.kind==='long'&&v.pull>24){meterEl.classList.add('show');metersEl.textContent=(v.pull/v.target*v.meters).toFixed(1)+' 公尺';rootLabel.textContent='竟然還沒到底……';}else if(v.kind==='mass'&&v.pull>30){hintEl.textContent='下面好像連著一大片……';}}
+function end(e){if(!active||active.id!==e.pointerId)return;active=null;meterEl.classList.remove('show');hintEl.textContent='沒拔完可以再抓住同一株，接著往上拉。';}
+canvas.addEventListener('pointerdown',start);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);canvas.addEventListener('contextmenu',function(e){e.preventDefault()});
+document.getElementById('reset').addEventListener('click',function(){newPatch()});
+document.getElementById('again').addEventListener('click',function(){newPatch()});
+document.getElementById('sound').addEventListener('click',function(){muted=!muted;this.textContent=muted?'🔇 聲音關閉':'🔊 聲音開啟';if(!muted)audioInit()});
+document.getElementById('long').addEventListener('click',function(){newPatch();var center=weeds.reduce(function(a,b){return Math.abs(a.fx-.5)<Math.abs(b.fx-.5)?a:b});center.kind='long';center.pull=0;center.target=rand(430,590);center.meters=rand(20,39);notice('中間那株，可能藏著什麼……',2000)});
+function scenery(){var g=ctx.createLinearGradient(0,0,0,ground);g.addColorStop(0,'#e6eee7');g.addColorStop(.64,'#f0f3e6');g.addColorStop(1,'#d6e7cd');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+ctx.fillStyle='#d7e6cf';ctx.beginPath();ctx.moveTo(0,ground-48);for(var x=0;x<=w+18;x+=18)ctx.lineTo(x,ground-69+Math.sin(x*.007+.8)*17+Math.sin(x*.019)*6);ctx.lineTo(w,ground);ctx.lineTo(0,ground);ctx.fill();
+ctx.fillStyle='#c9ddbf';ctx.beginPath();ctx.moveTo(0,ground-26);for(x=0;x<=w+18;x+=18)ctx.lineTo(x,ground-31+Math.sin(x*.011+3)*13);ctx.lineTo(w,ground);ctx.lineTo(0,ground);ctx.fill();
+ctx.save();ctx.globalAlpha=.26;ctx.strokeStyle='#779778';ctx.lineWidth=1.4;var fenceBase=ground-46;for(x=28;x<w;x+=58){ctx.beginPath();ctx.moveTo(x,fenceBase-4);ctx.lineTo(x,fenceBase-42);ctx.stroke()}for(var row=0;row<2;row++){ctx.beginPath();ctx.moveTo(0,fenceBase-32+row*17);ctx.lineTo(w,fenceBase-32+row*17);ctx.stroke()}ctx.restore();
+var soil=ctx.createLinearGradient(0,ground,0,h);soil.addColorStop(0,'#a48b6e');soil.addColorStop(.17,'#9f7e61');soil.addColorStop(1,'#7a5c45');ctx.fillStyle=soil;ctx.beginPath();ctx.moveTo(0,groundAt(0));for(x=0;x<=w+5;x+=5)ctx.lineTo(x,groundAt(x));ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.fill();
+ctx.strokeStyle='#d6b99a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,groundAt(0)-1);for(x=0;x<=w+5;x+=5)ctx.lineTo(x,groundAt(x)-1);ctx.stroke();
+ctx.save();ctx.globalAlpha=.17;for(var i=0;i<65;i++){var px=((i*137.1+seed*49)%(w+20)),py=ground+8+((i*71.7+seed*29)%(h-ground)),rad=(i%4+1)*.64;ctx.fillStyle=i%3?'#eed5b1':'#473a2b';ctx.beginPath();ctx.ellipse(px,py,rad*1.6,rad,((i*23)%30)/30,0,Math.PI*2);ctx.fill()}ctx.restore();
+for(i=0;i<weeds.length;i++){var weed=weeds[i],wx=weed.fx*w,wy=groundAt(wx);if(weed.removed){ctx.fillStyle='#604a3ca0';ctx.beginPath();ctx.ellipse(wx,wy+3,11,4.3,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#d0b493';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(wx,wy+3,17,5.2,0,0,Math.PI*2);ctx.stroke()}else{ctx.strokeStyle='#bca581';ctx.lineWidth=1.2;ctx.globalAlpha=.6;ctx.beginPath();ctx.moveTo(wx,wy+1);ctx.quadraticCurveTo(wx+9,wy+17,wx-4,wy+28);ctx.moveTo(wx,wy+14);ctx.lineTo(wx+10,wy+22);ctx.stroke();ctx.globalAlpha=1;}}
+}
+function leaf(x0,y0,dx,dy,width,color){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x0,y0);ctx.quadraticCurveTo(x0+dx*.46-width,y0+dy*.44,x0+dx,y0+dy);ctx.quadraticCurveTo(x0+dx*.55+width*.45,y0+dy*.60,x0,y0);ctx.fill()}
+function plant(v,lift,fade,dx){var x=v.fx*w+(dx||0),y=groundAt(v.fx*w)-lift;ctx.save();ctx.globalAlpha=fade===undefined?1:fade;ctx.translate(x,y);var sw=Math.sin(t*1.8+v.seed)*2.1+(lift?Math.sin(t*10+v.seed)*1.2:0);ctx.strokeStyle='#4f7744';ctx.lineCap='round';ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(0,1);ctx.lineTo(sw,-v.height*.63);ctx.stroke();for(var b=0;b<v.blades;b++){var mid=(b-(v.blades-1)*.5),angle=mid*.31,ln=v.height*(.65+(b%3)*.16),xx=Math.sin(angle)*ln+sw,yy=-Math.cos(angle)*ln;leaf(0,0,xx,yy,6+(b%3)*2,b%3===0?'#386d45':b%3===1?'#589653':'#77ae65');}
+ctx.restore()}
+function root(v,lift){var x=v.fx*w,y=groundAt(x),long=v.kind==='long',N=30,drift=Math.sin(t*4+v.seed)*4;ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+ctx.strokeStyle='#705b42';ctx.lineWidth=long?8:6;ctx.beginPath();for(var i=0;i<=N;i++){var q=i/N,yy=y-lift*q,xx=x+Math.sin(q*7.1+(long?t*3.5:0)+v.seed)*q*(long?19:8)+drift*q;if(i===0)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy)}ctx.stroke();ctx.strokeStyle='#e9d3a7';ctx.lineWidth=long?5.5:3.8;ctx.stroke();
+var branches=long?16:6;ctx.strokeStyle='#e2cba2';ctx.lineWidth=1.5;for(i=1;i<=branches;i++){var q=i/(branches+1),yy=y-lift*q,xx=x+Math.sin(q*7.1+(long?t*3.5:0)+v.seed)*q*(long?19:8)+drift*q,side=i%2?1:-1,extent=(long?23:12)*(.45+Math.sin(i*34+v.seed)*.35);ctx.beginPath();ctx.moveTo(xx,yy);ctx.quadraticCurveTo(xx+side*extent*.5,yy+6,xx+side*extent,yy+9+q*10);ctx.stroke();}
+ctx.restore()}
+function drawWeeds(){for(var i=0;i<weeds.length;i++){var v=weeds[i];if(v.removed)continue;var pulling=active&&active.weed===v,progress=v.pull/v.target,lift=v.pull?Math.min(v.kind==='long'?180:113,progress*(v.kind==='long'?310:115)+10):0;
+if(v.pull>0){ctx.save();ctx.globalAlpha=.42;ctx.fillStyle='#443929';ctx.beginPath();ctx.ellipse(v.fx*w,groundAt(v.fx*w),10+progress*10,3+progress*2,0,0,Math.PI*2);ctx.fill();ctx.restore();root(v,lift)}
+if(pulling){ctx.save();ctx.strokeStyle='#f2f8da';ctx.globalAlpha=.77;ctx.lineWidth=2.2;ctx.setLineDash([4,5]);ctx.beginPath();ctx.ellipse(v.fx*w,groundAt(v.fx*w)+2,20+Math.sin(t*5)*2,7,0,0,Math.PI*2);ctx.stroke();ctx.restore()}
+plant(v,lift,1,pulling?clamp((active.curX-v.fx*w)*.11,-12,12):0)}}
+function drawEffects(dt){for(var i=floaters.length-1;i>=0;i--){var f=floaters[i];f.age+=dt;var a=f.age/f.life;if(a>=1){floaters.splice(i,1);continue}ctx.save();ctx.globalAlpha=1-clamp((a-.50)*2,0,1);ctx.translate(f.x,f.y-f.lift-a*80);ctx.rotate(f.spin*a);ctx.strokeStyle='#ecd5ad';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,0);var length=f.weed.kind==='long'?155:65;for(var s=0;s<=25;s++){var q=s/25;ctx.lineTo(Math.sin(q*13+t*3)*q*9,q*length)}ctx.stroke();ctx.restore();plantAtFloater(f,a)}
+for(i=waves.length-1;i>=0;i--){var wave=waves[i];wave.age+=dt;var wa=wave.age/.6;if(wa>=1){waves.splice(i,1);continue}ctx.strokeStyle='rgba(243,223,174,'+(1-wa)*.64+')';ctx.lineWidth=4*(1-wa)+.6;ctx.beginPath();ctx.ellipse(wave.x,wave.y,wave.max*wa+3,(wave.max*wa+3)*.2,0,0,Math.PI*2);ctx.stroke()}
+for(i=particles.length-1;i>=0;i--){var p=particles[i];p.age+=dt;if(p.age>=p.life){particles.splice(i,1);continue}p.vy+=p.gravity*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;ctx.globalAlpha=1-p.age/p.life;ctx.fillStyle=p.color;ctx.beginPath();ctx.ellipse(p.x,p.y,p.size*(1-p.age/p.life*.7),p.size*.7,0,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
+function plantAtFloater(f,a){var v=f.weed,px=f.x,py=f.y-f.lift-a*80;ctx.save();ctx.globalAlpha=1-clamp((a-.55)*2.2,0,1);ctx.translate(px,py);ctx.rotate(f.spin*a);for(var i=0;i<v.blades;i++){var mid=i-(v.blades-1)/2,len=v.height*(.6+(i%3)*.15);leaf(0,0,Math.sin(mid*.32)*len,-Math.cos(mid*.32)*len,7,i%2?'#609b54':'#437843')}ctx.restore()}
+function frame(now){var dt=Math.min(.05,((now-last)||16)/1000);last=now;t+=dt;if(active){var v=active.weed;if(v.kind==='long'&&v.pull>18&&active.curY<ground-42){advance(v,dt*(v.kind==='long'?155:100));}else if(v.kind==='mass'&&v.pull>20&&active.curY<ground-55){advance(v,dt*45)}}
+for(var i=queue.length-1;i>=0;i--){queue[i].delay-=dt;if(queue[i].delay<=0){kill(queue[i].weed,true);queue.splice(i,1)}}
+if(toastUntil&&now>toastUntil){toastEl.classList.remove('show');toastUntil=0}
+if(completeAt&&now>completeAt){completeAt=0;document.getElementById('summary').textContent='拔了 '+score+' 株。班長說：隔壁那塊也要。';completeEl.classList.add('show')}
+scenery();drawWeeds();drawEffects(dt);requestAnimationFrame(frame)}
+newPatch();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
