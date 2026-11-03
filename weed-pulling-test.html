@@ -75,7 +75,7 @@ if(weed.kind==='long'&&!via){for(var i=0;i<4;i++)pop(.68,i*.065);notice('完整�
 else if(weed.kind==='mass'&&!via){var targets=weeds.filter(function(other){return other!==weed&&!other.removed&&Math.abs(other.fx-weed.fx)*w<Math.min(165,w*.32)});targets.sort(function(a,b){return Math.abs(a.fx-weed.fx)-Math.abs(b.fx-weed.fx)});for(var j=0;j<targets.length;j++)queue.push({weed:targets[j],delay:.10+j*.11});for(var k=0;k<5;k++)pop(.7,k*.063);notice('嘩啦！一整片帶起來！',1750);vibrate([16,32,22]);}
 else{pop(via?.67:weed.kind==='tough'?1.1:.76);if(!via&&weed.kind==='tough')notice('啵！終於拔出來了',1000);vibrate(12)}
 if(score===weeds.length)completeAt=performance.now()+1850;}
-function start(e){if(e.target!==canvas)return;audioInit();var p=point(e),nearest=null,best=Infinity;for(var i=0;i<weeds.length;i++){var v=weeds[i];if(v.removed)continue;var x=v.fx*w,y=groundAt(x),d=Math.hypot((p.x-x)*1.0,(p.y-(y-v.height*.52))*.8);if(d<best){best=d;nearest=v}}
+function start(e){if(e.target!==canvas)return;audioInit();var p=point(e),nearest=null,best=Infinity;for(var i=0;i<weeds.length;i++){var v=weeds[i];if(v.removed)continue;var x=v.fx*w,y=groundAt(x),lift=v.pull?Math.min(v.kind==='long'?180:113,(v.pull/v.target)*(v.kind==='long'?310:115)+10):0,d=Math.hypot((p.x-x)*1.0,(p.y-(y-lift-v.height*.52))*.8);if(d<best){best=d;nearest=v}}
 if(!nearest||best>Math.max(43,Math.min(66,w*.115)))return;
 active={weed:nearest,id:e.pointerId,lastY:p.y,curY:p.y,curX:p.x,initialY:p.y,started:performance.now(),tension:0};try{canvas.setPointerCapture(e.pointerId)}catch(e2){}e.preventDefault();hintEl.textContent='很好，繼續慢慢往上拔…';fiber(.6)}
 function point(e){var r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
