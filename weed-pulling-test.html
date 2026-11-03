@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#e8efdf">
-<title>拔草模擬器｜鬆土連根拔 v0.5.1</title>
+<title>拔草模擬器｜鬆土連根拔 v0.5.2</title>
 <style>
 :root{color-scheme:light;--green:#263f31;--muted:#6e806e;--light:#f8faf4;--edge:#d7e0d0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -62,7 +62,7 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
  </div>
 <div id="modeGuide">目前：鏟子</div><div id="message"></div><div id="help" class="show">先用鏟子挖鬆土壤，再切換手拔草</div>
 <div id="finish"><div class="card"><div class="big">🌱</div><h2>斬草除根。</h2><p id="report">班長說：旁邊還有一片。</p><button id="again" class="primary">再拔一片</button></div></div>
-<div class="version">獨立試玩 · v0.5.1</div>
+<div class="version">獨立試玩 · v0.5.2</div>
 <script>
 
 
@@ -88,7 +88,7 @@ function pop(vol=.75){if(!audioCtx||mute)return;try{const now=audioCtx.currentTi
 function digSound(){noiseSound(.075,430,.16);if(audioCtx&&!mute)try{const now=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.setValueAtTime(108,now);o.frequency.exponentialRampToValueAtTime(61,now+.09);g.gain.setValueAtTime(.05,now);g.gain.exponentialRampToValueAtTime(.0001,now+.11);o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+.12)}catch(e){}}
 function buzz(v){try{if(navigator.vibrate)navigator.vibrate(v)}catch(e){}}
 function toast(text,ms=1350){UI.toast.textContent=text;UI.toast.classList.add('show');toastUntil=performance.now()+ms}
-function makePlant(x,z,type){return{x,z,type,need:type==='tough'?3:2,loose:0,state:'live',broken:false,recoveryDig:0,breakCause:'',height:rand(.72,1.19),seed:rand(0,999),leaves:Math.floor(rand(5,9)),tug:0,lastStroke:-1}}
+function makePlant(x,z,type){return{x,z,type,need:Math.floor(Math.random()*3)+1,loose:0,state:'live',broken:false,recoveryDig:0,breakCause:'',height:rand(.72,1.19),seed:rand(0,999),leaves:Math.floor(rand(5,9)),tug:0,lastStroke:-1}}
 function grassCondition(p){
  if(p.broken)return p.recoveryDig>=2&&p.loose>=p.need?'stump-ready':'stump';
  if(p.loose<p.need)return 'tight';
