@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#e8efdf">
-<title>拔草模擬器｜鏟土與連根拔起 v0.3</title>
+<title>拔草模擬器｜鬆土連根拔 v0.4</title>
 <style>
 :root{color-scheme:light;--green:#263f31;--muted:#6e806e;--light:#f8faf4;--edge:#d7e0d0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -53,7 +53,7 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
 <body>
 <canvas id="scene" aria-label="2.5D 拔草遊戲，按住雜草往畫面上方拉"></canvas>
 <div id="hud">
- <div id="head"><div><div class="eyebrow">ARMY / GARDEN · 2.5D</div><h1>拔草模擬器</h1><div class="note">先鏟鬆土壤，再親手連根拔起</div></div><div class="counter"><b id="done">0</b><small> / <span id="total">0</span> 叢</small></div></div>
+ <div id="head"><div><div class="eyebrow">ARMY / GARDEN · 2.5D</div><h1>拔草模擬器</h1><div class="note">鏟鬆泥土 · 抽出草根 · 一次連拔</div></div><div class="counter"><b id="done">0</b><small> / <span id="total">0</span> 叢</small></div></div>
  <div id="footer"><div id="tip">先選鏟子挖土，想拔草再選「手」</div><div id="buttons"><button id="sound">🔊 音效</button><button id="reset">換片草地</button></div></div>
  <div id="tools" role="group" aria-label="選擇操作工具">
  <button id="handTool" aria-label="切換成手拔草"><span class="toolIcon">✋</span><span>手</span></button>
@@ -62,15 +62,16 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
  </div>
 <div id="modeGuide">目前：鏟子</div><div id="message"></div><div id="help" class="show">先用鏟子挖鬆土壤，再切換手拔草</div>
 <div id="finish"><div class="card"><div class="big">🌱</div><h2>斬草除根。</h2><p id="report">班長說：旁邊還有一片。</p><button id="again" class="primary">再拔一片</button></div></div>
-<div class="version">獨立試玩 · v0.3</div>
+<div class="version">獨立試玩 · v0.4</div>
 <script>
+
 
 (function(){
 'use strict';
 const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d',{alpha:false});
 const UI={done:document.getElementById('done'),total:document.getElementById('total'),tip:document.getElementById('tip'),toast:document.getElementById('message'),help:document.getElementById('help'),finish:document.getElementById('finish'),report:document.getElementById('report'),guide:document.getElementById('modeGuide'),hand:document.getElementById('handTool'),shovel:document.getElementById('shovelTool')};
-const CELL=.52,dirs=[[1,0],[-1,0],[0,1],[0,-1]],R=Math.PI*2;
-let W=0,H=0,DPR=1,S=38,baseY=450,time=0,last=0,tool='shovel',plants=[],tiles=new Map(),groups=[],particles=[],rings=[],shovels=[];
+const R=Math.PI*2;
+let W=0,H=0,DPR=1,S=38,baseY=450,time=0,last=0,tool='shovel',plants=[],soilMarks=[],holes=[],groups=[],particles=[],rings=[],shovels=[],strokeSerial=0;
 let pointer=null,total=0,removed=0,toastUntil=0,finishAt=0,audioCtx=null,noise=null,mute=false,seed=Math.random()*999;
 const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
 function smooth(x){x=clamp(x,0,1);return x*x*(3-2*x)}
@@ -87,62 +88,71 @@ function pop(vol=.75){if(!audioCtx||mute)return;try{const now=audioCtx.currentTi
 function digSound(){noiseSound(.075,430,.16);if(audioCtx&&!mute)try{const now=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.setValueAtTime(108,now);o.frequency.exponentialRampToValueAtTime(61,now+.09);g.gain.setValueAtTime(.05,now);g.gain.exponentialRampToValueAtTime(.0001,now+.11);o.connect(g);g.connect(audioCtx.destination);o.start(now);o.stop(now+.12)}catch(e){}}
 function buzz(v){try{if(navigator.vibrate)navigator.vibrate(v)}catch(e){}}
 function toast(text,ms=1350){UI.toast.textContent=text;UI.toast.classList.add('show');toastUntil=performance.now()+ms}
-function makePlant(x,z,type){return{x,z,type,need:type==='tough'?3:1,loose:0,state:'live',broken:false,height:rand(.72,1.19),seed:rand(0,999),leaves:Math.floor(rand(5,9)),tug:0}}
+function makePlant(x,z,type){return{x,z,type,need:type==='tough'?3:1,loose:0,state:'live',broken:false,height:rand(.72,1.19),seed:rand(0,999),leaves:Math.floor(rand(5,9)),tug:0,lastStroke:-1}}
 function newGarden(){
-plants=[];tiles=new Map();groups=[];particles=[];rings=[];shovels=[];removed=0;total=0;pointer=null;finishAt=0;seed=Math.random()*900;
+plants=[];soilMarks=[];holes=[];groups=[];particles=[];rings=[];shovels=[];removed=0;total=0;pointer=null;finishAt=0;seed=Math.random()*900;
 UI.finish.classList.remove('show');UI.help.classList.add('show');UI.tip.textContent='先用鏟子挖土，想拔草再選「手」';
 let count=Math.min(20,Math.max(11,Math.floor(W/29))),tries=0;
 while(plants.length<count&&tries++<1200){const x=rand(-3.85,3.85),z=rand(-3.4,3.6);if(!inside(x,z))continue;let valid=true;for(const p of plants){if(Math.hypot((p.x-x)*1.04,(p.z-z)*.9)<.93){valid=false;break}}if(valid)plants.push(makePlant(x,z,Math.random()<.26?'tough':'normal'))}
 total=plants.length;plants.sort((a,b)=>a.z-b.z);UI.done.textContent='0';UI.total.textContent=String(total);setTool('shovel');
 }
-function setTool(next){if(pointer)pointer=null;tool=next;UI.hand.classList.toggle('selected',tool==='hand');UI.shovel.classList.toggle('selected',tool==='shovel');UI.guide.textContent='目前：'+(tool==='shovel'?'鏟子':'手');UI.tip.textContent=tool==='shovel'?'點擊或滑過土地刨鬆，空地也能鏟':'抓住已鏟鬆的草向上拉；土塊連通就會一起拔'}
+function setTool(next){if(pointer)pointer=null;tool=next;UI.hand.classList.toggle('selected',tool==='hand');UI.shovel.classList.toggle('selected',tool==='shovel');UI.guide.textContent='目前：'+(tool==='shovel'?'鏟子':'手');UI.tip.textContent=tool==='shovel'?'點擊或滑過土地刨鬆，空地也能鏟':'抓住草往上拉；相連的鬆土可以連根拔起'}
 UI.hand.addEventListener('click',()=>setTool('hand'));UI.shovel.addEventListener('click',()=>setTool('shovel'));
 document.getElementById('reset').addEventListener('click',newGarden);
 document.getElementById('again').addEventListener('click',newGarden);
 document.getElementById('sound').addEventListener('click',function(){mute=!mute;this.textContent=mute?'🔇 靜音':'🔊 音效';if(!mute)enableSound()});
-function getTile(ix,iz,create=false){const k=key(ix,iz);let c=tiles.get(k);if(!c&&create){const x=(ix+.5)*CELL,z=(iz+.5)*CELL;if(!inside(x,z))return null;c={ix,iz,level:0,status:'dug',group:null};tiles.set(k,c)}return c}
-function tileOf(p){const a=coord(p.x,p.z);return getTile(a.ix,a.iz)}
+function stamp(x,z,stroke){
+ let nearest=null,nearDist=.13;
+ for(const m of soilMarks){const d=Math.hypot(m.x-x,m.z-z);if(d<nearDist){nearest=m;nearDist=d}}
+ if(nearest){nearest.strength=Math.min(5,nearest.strength+1);nearest.r=Math.min(.76,nearest.r+.006)}
+ else soilMarks.push({x,z,r:rand(.57,.66),strength:1,seed:rand(0,6000)});
+ for(const p of plants){if(p.state!=='live'||p.lastStroke===stroke)continue;
+   if(Math.hypot(p.x-x,p.z-z)<.76){p.loose=Math.min(5,p.loose+1);p.lastStroke=stroke}}
+}
 function emit(x,y,count,color='#b49a78',force=1){for(let i=0;i<count;i++){const theta=rand(-Math.PI+.17,-.06),v=rand(30,105)*force;particles.push({x:x+rand(-6,6),y:y+rand(-3,3),vx:Math.cos(theta)*v,vy:Math.sin(theta)*v,gravity:rand(130,300),size:rand(1.3,4.8),color,life:rand(.35,.94),age:0})}if(particles.length>500)particles.splice(0,particles.length-500)}
 function ring(x,y,r=40){rings.push({x,y,r,age:0})}
-function dig(x,z){
-if(!inside(x,z))return false;let worked=0;
-const center=coord(x,z);
-for(let ix=center.ix-2;ix<=center.ix+2;ix++)for(let iz=center.iz-2;iz<=center.iz+2;iz++){
-const tx=(ix+.5)*CELL,tz=(iz+.5)*CELL;
-if(Math.hypot(tx-x,tz-z)>.69)continue;
-const cell=getTile(ix,iz,true);
-if(!cell||cell.status!=='dug')continue;cell.level=Math.min(5,cell.level+1);worked++;
-}
-if(!worked)return false;
-for(const p of plants){if(p.state!=='live')continue;if(Math.hypot(p.x-x,p.z-z)<.78){p.loose=Math.min(5,p.loose+1);const c=coord(p.x,p.z),tile=getTile(c.ix,c.iz,true);if(tile&&tile.status==='dug')tile.level=Math.max(1,tile.level)}}
-const point=project(x,z);
-shovels.push({x:point.x,y:point.y,age:0});emit(point.x,point.y,15,'#ab8e6b',1.25);emit(point.x,point.y,6,'#d3b88f',.67);ring(point.x,point.y,26);digSound();buzz(8);
+function dig(x,z,stroke){
+if(!inside(x,z))return false;
+const currentStroke=stroke===undefined?++strokeSerial:stroke;
+stamp(x,z,currentStroke);
+const p=project(x,z);
+shovels.push({x:p.x,y:p.y,age:0});
+emit(p.x,p.y,12,'#a48666',1.11);
+emit(p.x,p.y,5,'#d0b38b',.62);
+ring(p.x,p.y,27);
+digSound();buzz(7);
 return true;
 }
 function nearestLeaf(screen,limit){let pick=null,best=limit;for(const p of plants){if(p.state!=='live')continue;const pos=project(p.x,p.z,p.tug*.20);const y=pos.y-(p.broken?12:p.height*S*.60),distance=Math.hypot(screen.x-pos.x,(screen.y-y)*.9);if(distance<best){best=distance;pick=p}}return pick}
 function digSpot(screen){const near=nearestLeaf(screen,Math.max(36,S*.92));if(near)return{x:near.x,z:near.z};return unproject(screen.x,screen.y)}
-function connected(v){
-const root=tileOf(v);if(!root||root.status!=='dug'||!root.level)return null;
-const todo=[root],seen=new Set(),all=[];
-for(let i=0;i<todo.length;i++){const cell=todo[i],k=key(cell.ix,cell.iz);if(seen.has(k)||cell.status!=='dug'||cell.level===0)continue;seen.add(k);all.push(cell);
-for(const d of dirs){const nb=getTile(cell.ix+d[0],cell.iz+d[1]);if(nb&&nb.status==='dug'&&nb.level>0&&!seen.has(key(nb.ix,nb.iz)))todo.push(nb)}
+function connected(seedPlant){
+const attached=soilMarks.filter(m=>Math.hypot(m.x-seedPlant.x,m.z-seedPlant.z)<m.r+.11);
+if(!attached.length)return null;
+const todo=[...attached],seen=new Set(),all=[];
+for(let i=0;i<todo.length;i++){
+const m=todo[i];if(seen.has(m))continue;seen.add(m);all.push(m);
+for(const other of soilMarks){if(seen.has(other))continue;
+ if(Math.hypot(other.x-m.x,other.z-m.z)<=(m.r+other.r)*.90)todo.push(other)}
 }
-const members=plants.filter(p=>p.state==='live'&&seen.has(key(coord(p.x,p.z).ix,coord(p.x,p.z).iz)));
-return{cells:all,members,cellKeys:seen};
+const members=plants.filter(p=>p.state==='live'&&all.some(m=>Math.hypot(p.x-m.x,p.z-m.z)<m.r+.11));
+return{marks:all,members};
 }
 function startLift(p){
-const component=connected(p);if(!component||!component.members.length){toast('這片土還沒連起來',1000);return}
-const g={cells:component.cells,cellKeys:component.cellKeys,members:component.members,age:0,duration:2.42,phase:0,cx:0,cz:0};
-g.cx=g.cells.reduce((s,c)=>s+(c.ix+.5)*CELL,0)/g.cells.length;
-g.cz=g.cells.reduce((s,c)=>s+(c.iz+.5)*CELL,0)/g.cells.length;
-for(const c of g.cells){c.status='lifting';c.group=g}
+const area=connected(p);
+if(!area||!area.members.length){toast('這株旁邊的土還沒鏟鬆',1100);return}
+const ready=area.members.filter(v=>v.loose>=v.need);
+ready.sort((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)-Math.hypot(b.x-p.x,b.z-p.z));
+if(!ready.includes(p)){toast('這株還不夠鬆，先多鏟幾下',1200);return}
+const g={members:ready,age:0,delay:.095,duration:2.12+(ready.length-1)*.095,fired:new Set(),cx:p.x,cz:p.z};
 for(const member of g.members){member.state='lifting';member.tug=0}
 groups.push(g);pointer=null;
-const projected=project(g.cx,g.cz);
-ring(projected.x,projected.y,Math.min(128,33+g.cells.length*2.6));
-emit(projected.x,projected.y,18,'#c7aa80',1.6);pop(1.15);buzz([13,42,20]);
-if(g.members.length>1){toast('連根拔起！'+g.members.length+' 株一起出來！',1600);UI.tip.textContent='鏟鬆的土地連起來，就能一次掀起整片'}
-else{UI.tip.textContent='啵！草根和土塊一起拔出來了'}
+const origin=project(p.x,p.z);
+emit(origin.x,origin.y,10,'#c1a17b',1.05);
+ring(origin.x,origin.y,29);pop(.66);buzz([12,30,15]);
+const stubborn=area.members.length-ready.length;
+if(g.members.length>1){toast('連根拔起！'+g.members.length+' 株一起抽出！',1700);UI.tip.textContent='草根會接連抽出，土地不會被掀走'}
+else{UI.tip.textContent='感受草根從泥土裡慢慢被抽出來'}
+if(stubborn)UI.tip.textContent+='；還有 '+stubborn+' 株頑固草要再鏟';
 }
 function breakStem(p){
 if(p.broken)return;
@@ -161,14 +171,14 @@ const spot=digSpot(pos);
 const ok=dig(spot.x,spot.z);
 if(ok){const nearby=plants.find(p=>p.state==='live'&&Math.hypot(p.x-spot.x,p.z-spot.z)<.67&&p.need>1&&p.loose<p.need);
 UI.tip.textContent=nearby?'頑固草：已鏟 '+nearby.loose+' / '+nearby.need+' 下，需要繼續鏟':'土變鬆了！可一直鏟，也能滑動把土區接起來';
-pointer={id:e.pointerId,type:'shovel',lastX:spot.x,lastZ:spot.z,lastTime:performance.now()};}
+pointer={id:e.pointerId,type:'shovel',lastX:spot.x,lastZ:spot.z,lastTime:performance.now(),stroke:strokeSerial};}
 }else{
 const weed=nearestLeaf(pos,Math.max(38,S*1.05));
 if(!weed){UI.tip.textContent='請先抓住草葉或斷掉的草根';return}
 if(weed.loose<=0){toast('先用鏟子把土刨鬆！',1100);UI.tip.textContent='目前還沒鏟土，這株拔不動';buzz(7);return}
 pointer={id:e.pointerId,type:'hand',weed,lastY:pos.y,dy:0,started:performance.now()};
 if(weed.loose<weed.need){UI.tip.textContent='拔不動！這株很頑固，放手再多鏟 '+(weed.need-weed.loose)+' 下';noiseSound(.03,410,.075)}
-else{UI.tip.textContent=weed.broken?'抓住殘根，慢慢往上拔':'往上拉！如果土區有連通，就會整片一起掀起'}
+else{UI.tip.textContent=weed.broken?'抓住殘根，慢慢往上拔':'往上拉！連通的草根會接連抽出，土壤保持原位'}
 }
 try{canvas.setPointerCapture(e.pointerId)}catch(e2){}e.preventDefault();
 }
@@ -178,7 +188,7 @@ e.preventDefault();const pos=eventXY(e);
 if(pointer.type==='shovel'){
 const spot=unproject(pos.x,pos.y),dist=Math.hypot(spot.x-pointer.lastX,spot.z-pointer.lastZ);
 if(dist>.32){const steps=Math.min(14,Math.ceil(dist/.31)),x0=pointer.lastX,z0=pointer.lastZ;
-for(let s=1;s<=steps;s++){const at=s/steps;dig(lerp(x0,spot.x,at),lerp(z0,spot.z,at))}
+for(let s=1;s<=steps;s++){const at=s/steps;dig(lerp(x0,spot.x,at),lerp(z0,spot.z,at),pointer.stroke)}
 pointer.lastX=spot.x;pointer.lastZ=spot.z;pointer.lastTime=performance.now();}
 }else{
 const p=pointer.weed,dy=Math.max(0,pointer.lastY-pos.y);pointer.lastY=pos.y;pointer.dy+=dy;
@@ -191,7 +201,7 @@ canvas.addEventListener('pointerdown',pointerDown);canvas.addEventListener('poin
 canvas.addEventListener('pointerup',pointerUp);canvas.addEventListener('pointercancel',pointerUp);canvas.addEventListener('contextmenu',e=>e.preventDefault());
 function polygon(pts,fill,stroke=null,width=1){ctx.beginPath();for(let i=0;i<pts.length;i++){const p=pts[i];if(i)ctx.lineTo(p.x,p.y);else ctx.moveTo(p.x,p.y)}ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}}
 function oval(x,y,rx,ry,color){ctx.beginPath();ctx.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),0,0,R);ctx.fillStyle=color;ctx.fill()}
-function cellCorners(c,transform){const x=c.ix*CELL,z=c.iz*CELL;return[transform(x,z),transform(x+CELL,z),transform(x+CELL,z+CELL),transform(x,z+CELL)]}
+
 function drawBackground(){
 const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#eaf1e3');sky.addColorStop(.55,'#d9e8d2');sky.addColorStop(1,'#d8e2d0');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
 ctx.fillStyle='#c9dcc1';ctx.beginPath();ctx.moveTo(0,H*.40);for(let x=0;x<=W+20;x+=14)ctx.lineTo(x,H*.43+Math.sin(x*.015+3)*11);ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.fill();
@@ -205,17 +215,40 @@ const soil=ctx.createLinearGradient(0,baseY-3*S,0,baseY+3*S);soil.addColorStop(0
 ctx.save();ctx.globalAlpha=.30;for(let i=0;i<100;i++){const x=Math.sin(i*12.18+seed)*4.23,z=Math.sin(i*7.33+seed)*4.02;if(!inside(x,z))continue;const p=project(x,z),sz=(i%4+1)*.42;oval(p.x,p.y,sz*2.2,sz*.8,i%4?'#526444':'#d7c69a')}ctx.restore();
 }
 function drawSurface(){
-const cells=Array.from(tiles.values()).sort((a,b)=>a.iz-b.iz);
-for(const c of cells){const quad=cellCorners(c,(x,z)=>project(x,z));const n=c.level;
-if(c.status==='dug'){
-polygon(quad,n>=3?'#8b7658':n===2?'#998062':'#a58a66','#85694e',.7);
-const p=project((c.ix+.5)*CELL,(c.iz+.5)*CELL);
-ctx.save();ctx.globalAlpha=.36+.07*n;ctx.strokeStyle=n>=3?'#dec39d':'#cfb28e';ctx.lineWidth=Math.min(2,1+n*.19);
-for(let i=0;i<3;i++){const ix=Math.sin(c.ix*19+c.iz*7+i*2)*7,iz=Math.cos(c.iz*13+c.ix*3+i)*4;ctx.beginPath();ctx.moveTo(p.x-8+ix,p.y+iz-2);ctx.quadraticCurveTo(p.x+ix,p.y+iz-5,p.x+8+ix,p.y+iz);ctx.stroke()}ctx.restore();
-}else{
-polygon(quad,'#534736','#85694d',.9);
-const cp=project((c.ix+.5)*CELL,(c.iz+.5)*CELL);if((c.ix+c.iz)%2===0)oval(cp.x,cp.y,2,1,'#3e362a');
-}}
+ // Draw soft, organically blending loosened soil. Connectivity is based on overlapping dig marks,
+ // never on square tiles; the ground is not lifted when weeds are pulled.
+ for(const m of soilMarks){
+   const p=project(m.x,m.z),rx=m.r*S*(1-m.z*.021),ry=rx*.67;
+   ctx.save();ctx.translate(p.x,p.y);ctx.scale(1,.67);
+   const soft=ctx.createRadialGradient(0,0,1,0,0,rx*1.26);
+   const weight=clamp(m.strength,1,5);
+   soft.addColorStop(0,'rgba(83,65,45,'+(.58+weight*.052)+')');
+   soft.addColorStop(.43,'rgba(107,78,53,'+(.54+weight*.042)+')');
+   soft.addColorStop(.68,'rgba(125,97,65,.49)');
+   soft.addColorStop(.88,'rgba(143,108,76,.25)');
+   soft.addColorStop(1,'rgba(143,108,76,0)');
+   ctx.fillStyle=soft;ctx.beginPath();ctx.arc(0,0,rx*1.26,0,R);ctx.fill();
+   ctx.restore();
+ }
+ ctx.save();
+ for(const m of soilMarks){
+   const p=project(m.x,m.z),r=m.r*S;ctx.globalAlpha=clamp(.24+m.strength*.055,.24,.50);
+   for(let i=0;i<4;i++){
+     const j=m.seed+i*17.4,ox=Math.sin(j*12.81)*r*.47,oy=Math.cos(j*7.1)*r*.23;
+     ctx.strokeStyle=i%2?'#d4b48b':'#604c36';
+     ctx.lineWidth=i%2?1.4:1.1;
+     ctx.lineCap='round';
+     ctx.beginPath();ctx.moveTo(p.x+ox-3,p.y+oy+2);
+     ctx.quadraticCurveTo(p.x+ox+2,p.y+oy-3,p.x+ox+7,p.y+oy+1);
+     ctx.stroke();
+   }
+ }
+ ctx.restore();
+ for(const hole of holes){const p=project(hole.x,hole.z),size=hole.size||9;
+   oval(p.x,p.y+1,size,size*.42,'#4f4030');
+   oval(p.x,p.y+2,size*.75,size*.28,'#69553a');
+   ctx.strokeStyle='#d6b68b';ctx.lineWidth=1.6;ctx.beginPath();ctx.ellipse(p.x,p.y+1,size*1.13,size*.52,-.09,0,R);ctx.stroke();
+ }
 }
 function leaf(x,y,dx,dy,width,color){ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x,y);ctx.bezierCurveTo(x+dx*.13-width,y+dy*.3,x+dx*.74-width*.67,y+dy*.94,x+dx,y+dy);ctx.bezierCurveTo(x+dx*.72+width*.6,y+dy*.65,x+dx*.25+width*.5,y+dy*.23,x,y);ctx.fill();ctx.strokeStyle='#b2d08d72';ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(x+dx*.45,y+dy*.48,x+dx*.87,y+dy*.9);ctx.stroke()}
 function plantAt(p,pt,alpha=1){ctx.save();ctx.globalAlpha=alpha;const height=(p.broken?.19:1)*p.height*S,wind=Math.sin(time*1.8+p.seed)*1.7;
@@ -224,31 +257,53 @@ for(let i=0;i<p.leaves;i++){const off=i-(p.leaves-1)/2,theta=off*.35+Math.sin(p.
 ctx.restore()}
 function groundPlant(p){const pos=project(p.x,p.z,p.tug*.22);oval(pos.x,pos.y+2,12,4,'#3f4c3370');if(p.tug>.01){ctx.strokeStyle='#dcc29a';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(pos.x,pos.y+14);ctx.quadraticCurveTo(pos.x+9,pos.y+4,pos.x,pos.y-7);ctx.stroke()}
 plantAt(p,pos);if(p.need>1&&p.loose>0&&p.loose<p.need){ctx.save();const txt=(p.need-p.loose)+'鏟';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#f8edce';const q=project(p.x,p.z);ctx.beginPath();ctx.roundRect(q.x-17,q.y-p.height*S-28,34,18,7);ctx.fill();ctx.fillStyle='#886331';ctx.fillText(txt,q.x,q.y-p.height*S-15);ctx.restore()}}
-function boundary(g,c,dx,dz){return!g.cellKeys.has(key(c.ix+dx,c.iz+dz))}
-function transformLift(g,x,z,below=false){
-const f=clamp(g.age/g.duration,0,1),pull=smooth((f-.12)/.54),exit=smooth((f-.74)/.26);
-const lift=1.9*pull+2.10*exit+Math.sin(time*18)*.035*pull;
-const shift=.75*exit,tilt=.22*pull;
-return project(x+shift,z-.48*exit,lift+tilt*(x-g.cx)-(below?.42:0));
+function drawRoots(p,origin,travel,progress){
+  // Root emerges in a long flexible strand while the hole stays fixed in the soil.
+  const rise=travel,seed=p.seed,wiggle=Math.sin(time*12+seed)*progress*2.7;
+  const n=32,coords=[];
+  for(let i=0;i<=n;i++){
+    const t=i/n,osc=Math.sin(t*12.5+seed+time*3)*t*(4+progress*6);
+    coords.push({x:origin.x+osc+wiggle*t,y:origin.y-rise*t+Math.sin(t*Math.PI*2.3+seed)*progress*2});
+  }
+  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.strokeStyle='#68503b';ctx.lineWidth=8;ctx.beginPath();
+  for(let i=0;i<coords.length;i++){const q=coords[i];if(i)ctx.lineTo(q.x,q.y);else ctx.moveTo(q.x,q.y)}ctx.stroke();
+  ctx.strokeStyle='#d9be93';ctx.lineWidth=5.4;ctx.stroke();
+  ctx.strokeStyle='#f1ddaf';ctx.lineWidth=1.3;ctx.stroke();
+  for(let i=3;i<n-2;i+=4){
+    const a=coords[i],b=coords[i+1],dir=i%3?1:-1;
+    ctx.strokeStyle=i%2?'#e0cba7':'#b99e73';ctx.lineWidth=1.45;
+    const length=(7+(i%4)*2)*progress;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);
+    ctx.quadraticCurveTo(a.x+dir*length*.52,a.y+6,a.x+dir*length,a.y+8+(i%3)*3);
+    ctx.stroke();
+    if(i%8===3){oval(a.x+dir*length,a.y+11,2.2,1.6,'#aa855e')}
+  }
+  ctx.restore();
+  return coords[n];
 }
-function drawLift(g){
-const f=clamp(g.age/g.duration,0,1),lift=smooth((f-.12)/.56),fade=1-smooth((f-.85)/.15);
-const middle=project(g.cx,g.cz),radius=Math.min(130,18+Math.sqrt(g.cells.length)*S*.46);ctx.save();ctx.globalAlpha=fade;
-oval(middle.x,middle.y,radius,Math.max(9,radius*.45),'#574a3890');
-const ordered=g.cells.slice().sort((a,b)=>a.iz-b.iz);
-for(const c of ordered){const top=cellCorners(c,(x,z)=>transformLift(g,x,z,false)),low=cellCorners(c,(x,z)=>transformLift(g,x,z,true));
-if(boundary(g,c,0,1))polygon([top[3],top[2],low[2],low[3]],'#876645','#604b33',.8);
-if(boundary(g,c,1,0))polygon([top[1],top[2],low[2],low[1]],'#987351','#604b33',.8);
-if(boundary(g,c,-1,0))polygon([top[0],top[3],low[3],low[0]],'#977455','#604b33',.8);
-if(boundary(g,c,0,-1))polygon([top[0],top[1],low[1],low[0]],'#947353','#604b33',.8)}
-ctx.save();ctx.lineCap='round';ctx.strokeStyle='#dfc7a1';ctx.lineWidth=2;
-let strands=0;for(const c of ordered){for(const [dx,dz] of dirs){if(!boundary(g,c,dx,dz))continue;strands++;if(strands%2)continue;
-const x=(c.ix+.5+dx*.44)*CELL,z=(c.iz+.5+dz*.44)*CELL,start=transformLift(g,x,z,true),d=lerp(6,30,(strands%7)/7)*lift;
-ctx.beginPath();ctx.moveTo(start.x,start.y);ctx.bezierCurveTo(start.x+5,start.y+d*.34,start.x-7,start.y+d*.81,start.x+Math.sin(strands)*8,start.y+d);ctx.stroke()}}
-ctx.restore();
-for(const c of ordered){const top=cellCorners(c,(x,z)=>transformLift(g,x,z,false));polygon(top,c.level>=3?'#91785a':'#a18c68',null);const mid=transformLift(g,(c.ix+.5)*CELL,(c.iz+.5)*CELL);ctx.strokeStyle='#705b43aa';ctx.lineWidth=.65;ctx.beginPath();ctx.moveTo(mid.x-5,mid.y);ctx.quadraticCurveTo(mid.x+2,mid.y-3,mid.x+7,mid.y+1);ctx.stroke()}
-for(const p of g.members){const foot=transformLift(g,p.x,p.z);plantAt(p,foot)}
-ctx.restore();
+function drawExtraction(g){
+  for(let i=0;i<g.members.length;i++){
+    const p=g.members[i],elapsed=g.age-i*g.delay;
+    const ground=project(p.x,p.z);
+    if(elapsed<=0){groundPlant(p);continue}
+    const q=clamp(elapsed/1.57,0,1);
+    const pressure=smooth(q/.19),released=smooth((q-.17)/.72);
+    const height=S*(.13*pressure+2.35*released);
+    const fade=1-smooth((elapsed-1.43)/.64);
+    if(fade<=.002)continue;
+    ctx.save();ctx.globalAlpha=fade;
+    oval(ground.x,ground.y,7+released*4,3+released*1.4,'#4d3b2e');
+    ctx.strokeStyle='#cdb189';ctx.lineWidth=1.45;
+    ctx.beginPath();ctx.ellipse(ground.x,ground.y,11+released*3,5+released*1.2,0,0,R);ctx.stroke();
+    if(released>.006){
+      const top=drawRoots(p,ground,height,released);
+      plantAt(p,{x:top.x,y:top.y},1);
+    }else{
+      plantAt(p,{x:ground.x+Math.sin(time*14+p.seed)*pressure*2,y:ground.y-pressure*S*.10},1);
+    }
+    ctx.restore();
+  }
 }
 function drawHandRing(){if(!pointer||pointer.type!=='hand')return;const p=pointer.weed,q=project(p.x,p.z);ctx.save();ctx.strokeStyle=p.loose<p.need?'#d99a689f':'#fcf3bcbd';ctx.lineWidth=2;ctx.setLineDash([4,5]);ctx.beginPath();ctx.ellipse(q.x,q.y,20,8,0,0,R);ctx.stroke();ctx.restore()}
 function drawShovels(){for(const s of shovels){const fade=1-s.age/.28;if(fade<=0)continue;ctx.save();ctx.globalAlpha=fade;ctx.translate(s.x+8,s.y-22-(1-fade)*11);ctx.rotate(.30-fade*.26);ctx.lineWidth=5;ctx.lineCap='round';ctx.strokeStyle='#6a4d37';ctx.beginPath();ctx.moveTo(0,-45);ctx.lineTo(0,-8);ctx.stroke();ctx.fillStyle='#78877f';ctx.beginPath();ctx.moveTo(-9,-8);ctx.lineTo(9,-8);ctx.lineTo(8,6);ctx.quadraticCurveTo(0,18,-8,6);ctx.closePath();ctx.fill();ctx.strokeStyle='#566b60';ctx.lineWidth=2;ctx.stroke();ctx.restore()}}
@@ -258,27 +313,41 @@ for(let i=rings.length-1;i>=0;i--){const a=rings[i];a.age+=dt;if(a.age>.5){rings
 for(let i=shovels.length-1;i>=0;i--){const a=shovels[i];a.age+=dt;if(a.age>.28)shovels.splice(i,1)}drawShovels();
 }
 function finalize(g){
-for(const c of g.cells){c.status='gone';c.group=null}
-for(const p of g.members){p.state='gone';removed++}
+for(const p of g.members){
+ p.state='gone';removed++;holes.push({x:p.x,z:p.z,size:p.broken?7.5:9});
+}
 UI.done.textContent=String(removed);
-const pt=project(g.cx,g.cz);ring(pt.x,pt.y,Math.min(145,30+g.cells.length*2));emit(pt.x,pt.y,17,'#ccb58b',1.2);pop(1.4);buzz([17,36,21]);
-if(g.members.length>1)toast('一次拔走 '+g.members.length+' 株！',1550);
+const at=project(g.cx,g.cz);ring(at.x,at.y,Math.min(95,25+g.members.length*5));
+emit(at.x,at.y,11,'#c9ae8a',.9);pop(g.members.length>1?1.03:.87);buzz([16,35,14]);
+if(g.members.length>1)toast('一口氣拔掉 '+g.members.length+' 株！',1400);
 if(removed>=total)finishAt=performance.now()+1650;
 }
 function frame(now){
 const dt=Math.min(.05,(now-last||16)/1000);last=now;time+=dt;
-for(let i=groups.length-1;i>=0;i--){const g=groups[i];g.age+=dt;if(g.age>=g.duration){finalize(g);groups.splice(i,1)}}
+for(let i=groups.length-1;i>=0;i--){
+ const g=groups[i];g.age+=dt;
+ for(let j=0;j<g.members.length;j++){
+   const p=g.members[j],threshold=j*g.delay+.43;
+   if(g.age>=threshold&&!g.fired.has(p)){
+     g.fired.add(p);pop(.58+rand(0,.22));noiseSound(.046,620,.075);
+     const at=project(p.x,p.z);emit(at.x,at.y,11,'#c8a67e',.98);
+     ring(at.x,at.y,19);if(j%3===0)buzz(8);
+   }
+ }
+ if(g.age>=g.duration){finalize(g);groups.splice(i,1)}
+}
 for(const p of plants){if(p.state==='live'&&p.tug>.001&&(!pointer||pointer.weed!==p))p.tug=Math.max(0,p.tug-dt*.8)}
 if(toastUntil&&now>toastUntil){UI.toast.classList.remove('show');toastUntil=0}
-if(finishAt&&now>finishAt){finishAt=0;UI.report.textContent='拔掉 '+removed+' 叢。班長：土都翻好了，隔壁也順便。';UI.finish.classList.add('show')}
+if(finishAt&&now>finishAt){finishAt=0;UI.report.textContent='拔掉 '+removed+' 叢。班長：草沒了，明天繼續拔。';UI.finish.classList.add('show')}
 drawBackground();drawSurface();
 for(const p of plants)if(p.state==='live')groundPlant(p);
-for(const g of groups)drawLift(g);
+for(const g of groups)drawExtraction(g);
 drawHandRing();effects(dt);
 requestAnimationFrame(frame);
 }
 newGarden();requestAnimationFrame(frame);
 })();
+
 </script>
 </body>
 </html>
