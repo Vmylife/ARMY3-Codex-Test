@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#e8efdf">
-<title>拔草模擬器｜60秒拔草挑戰 v0.6.3</title>
+<title>拔草模擬器｜60秒拔草挑戰 v0.6.4</title>
 <style>
 :root{color-scheme:light;--green:#263f31;--muted:#6e806e;--light:#f8faf4;--edge:#d7e0d0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -61,6 +61,18 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
 @media(max-height:640px){#challengebar{top:calc(56px + env(safe-area-inset-top));padding:3px 9px}.timevalue b{font-size:19px}#bossStats{top:calc(103px + env(safe-area-inset-top))}}
 @media(max-width:390px){#challengebar{top:calc(98px + env(safe-area-inset-top))}#bossStats{top:calc(151px + env(safe-area-inset-top))}}
 #challengebar{position:fixed}#timeBonus{font-weight:900;color:#2e8744;opacity:0;transform:translateY(4px) scale(.8);transition:opacity .16s,transform .16s;white-space:nowrap;font-variant-numeric:tabular-nums;font-size:14px}#timeBonus.show{opacity:1;transform:translateY(0) scale(1)}
+
+#bossMeter{position:fixed;top:28%;left:50%;width:max-content;max-width:95vw;transform:translate(-50%,-50%);pointer-events:none;z-index:6;text-align:center;filter:drop-shadow(0 6px 13px #32281840)}
+#bossMeter[hidden]{display:none!important}
+#bossMeter .meterCaption{font-size:13px;letter-spacing:.18em;font-weight:950;color:#fff9db;text-shadow:0 2px 6px #503f2c,0 0 10px #77552d;white-space:nowrap}
+.meterNumbers{display:flex;align-items:baseline;justify-content:center;gap:4px;line-height:1;margin-top:5px;transform-origin:center bottom;will-change:transform}
+.meterNumbers strong{font-size:clamp(71px,19vw,124px);font-weight:1000;line-height:1;letter-spacing:-.07em;font-variant-numeric:tabular-nums;color:#fff7bd;-webkit-text-stroke:2px #84562c;text-shadow:0 3px 0 #b87d37,0 7px 0 #6a472b,0 11px 22px #302517bf}
+.meterNumbers span{font-weight:950;font-size:25px;color:#fff0be;-webkit-text-stroke:.65px #704b2b;text-shadow:0 3px 6px #483420}
+.meterUnderline{margin:9px auto 0;width:70%;height:5px;border-radius:20px;background:linear-gradient(90deg,transparent,#fff7c4,transparent);box-shadow:0 0 17px #f8d96ca8}
+#bossStats.charging{background:#fff0c9f5;border:2px solid #edc87a;box-shadow:0 3px 19px #b67b365e}
+#bossStats.charging b{font-size:32px;color:#854319}
+#bossStats.charging .meterTapCount{display:inline-block;transform-origin:center}
+@media(max-height:640px){#bossMeter{top:29%}.meterNumbers strong{font-size:clamp(65px,16vh,110px)}}
 </style>
 </head>
 <body>
@@ -69,6 +81,7 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
  <div id="head"><div><div class="eyebrow">ARMY / GARDEN · 2.5D</div><h1>拔草模擬器</h1><div class="note">挺立＝沒鬆 · 舒展＝剛好 · 枯黃＝鏟過頭</div></div><div class="counter" id="plantCounter"><b id="done">0</b><small> / <span id="total">0</span> 叢</small></div></div>
  <div id="challengebar"><div id="stageText">第 1 / 3 片</div><div class="timevalue"><b id="seconds">60.0</b><span>秒</span></div><span id="timeBonus" aria-live="polite"></span></div>
  <div id="bossStats" hidden><b id="tapCount">0</b><span> 次蓄力</span><strong id="rootReadout"></strong></div>
+ <div id="bossMeter" aria-live="off" hidden><div class="meterCaption">草根長度 · 正在爆衝</div><div class="meterNumbers"><strong id="bossMeters">0.0</strong><span>m</span></div><div class="meterUnderline"></div></div>
  <div id="footer"><div id="tip">先選鏟子挖土，想拔草再選「手」</div><div id="buttons"><button id="sound">🔊 音效</button><button id="reset">重新挑戰</button></div></div>
  <div id="tools" role="group" aria-label="選擇操作工具">
  <button id="handTool" aria-label="切換成手拔草"><span class="toolIcon">✋</span><span>手</span></button>
@@ -78,7 +91,7 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
 <div id="modeGuide">目前：鏟子</div><div id="message"></div><div id="help" class="show">先用鏟子挖鬆土壤，再切換手拔草</div>
 <div id="welcome" class="modal"><div class="card"><div class="big">🌱</div><h2>60 秒拔草挑戰</h2><p>共有三片草地，完成一片自動換下一片。<br>全部清完會出現大草王！<br>剩下的時間瘋狂點擊蓄力，倒數結束後往上拉，看看草根到底有多長。</p><button id="start" class="primary">開始挑戰</button></div></div>
 <div id="finish"><div class="card"><div class="big">🌱</div><h2 id="finishTitle">斬草除根。</h2><p id="report">班長說：旁邊還有一片。</p><button id="again" class="primary">再挑戰一次</button></div></div>
-<div class="version">獨立試玩 · v0.6.3</div>
+<div class="version">獨立試玩 · v0.6.4</div>
 <script>
 
 
@@ -90,13 +103,13 @@ const R=Math.PI*2,DURATION_MS=60000,MAPS=3;
 const stageUI={welcome:document.getElementById('welcome'),start:document.getElementById('start'),
 timer:document.getElementById('seconds'),timeBonus:document.getElementById('timeBonus'),stage:document.getElementById('stageText'),
 challenge:document.getElementById('challengebar'),bossStats:document.getElementById('bossStats'),
-tapCount:document.getElementById('tapCount'),rootReadout:document.getElementById('rootReadout'),
+tapCount:document.getElementById('tapCount'),rootReadout:document.getElementById('rootReadout'),bossMeter:document.getElementById('bossMeter'),bossMeters:document.getElementById('bossMeters'),
 finishTitle:document.getElementById('finishTitle'),counter:document.getElementById('plantCounter'),
 tools:document.getElementById('tools'),reset:document.getElementById('reset')};
 let W=0,H=0,DPR=1,S=38,baseY=450,time=0,last=0,tool='shovel',plants=[],soilMarks=[],holes=[],groups=[],particles=[],rings=[],shovels=[],strokeSerial=0,lastDigDustAt=-1000,lastDigSoundAt=-1000;
 let pointer=null,total=0,removed=0,brokenTotal=0,toastUntil=0,finishAt=0,audioCtx=null,noise=null,mute=false,seed=Math.random()*999;
 let runPhase='intro',mapNumber=1,deadline=0,remainingMs=DURATION_MS,completedMaps=0,totalWeedsCleared=0,allBreaks=0,bonusDisplayUntil=0;
-let boss={taps:0,pulse:0,extractionTime:0,rootNow:0,rootGoal:0,rootDuration:0,lastSoundAt:0};
+let boss={taps:0,pulse:0,extractionTime:0,rootNow:0,rootGoal:0,rootDuration:0,lastSoundAt:0,hitShake:0,hitSparks:[]};
 const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t;
 function smooth(x){x=clamp(x,0,1);return x*x*(3-2*x)}
 function key(ix,iz){return ix+','+iz}
@@ -144,19 +157,19 @@ function startGame(){
   enableSound();
   mapNumber=1;completedMaps=0;totalWeedsCleared=0;allBreaks=0;runPhase='field';
   remainingMs=DURATION_MS;deadline=performance.now()+DURATION_MS;
-  boss={taps:0,pulse:0,extractionTime:0,rootNow:0,rootGoal:0,rootDuration:0,lastSoundAt:0};
+  boss={taps:0,pulse:0,extractionTime:0,rootNow:0,rootGoal:0,rootDuration:0,lastSoundAt:0,hitShake:0,hitSparks:[]};
   bonusDisplayUntil=0;stageUI.timeBonus.classList.remove('show');stageUI.timeBonus.textContent='';
   stageUI.welcome.classList.add('hidden');UI.finish.classList.remove('show');
   stageUI.counter.style.display='';stageUI.tools.classList.remove('hidden');
   UI.guide.classList.remove('hidden');stageUI.reset.style.display='';
-  stageUI.bossStats.hidden=true;stageUI.challenge.classList.remove('urgent');
+  stageUI.bossStats.hidden=true;stageUI.bossStats.classList.remove('charging');stageUI.bossMeter.hidden=true;stageUI.bossMeters.textContent='0.0';stageUI.challenge.classList.remove('urgent');
   stageUI.timer.textContent='60.0';loadPatch(1);
 }
 function enterBoss(){
  runPhase='bossCharge';plants=[];soilMarks=[];holes=[];groups=[];particles=[];rings=[];shovels=[];
  pointer=null;stageUI.tools.classList.add('hidden');UI.guide.classList.add('hidden');
  stageUI.reset.style.display='none';stageUI.counter.style.display='none';
- stageUI.bossStats.hidden=false;stageUI.stage.textContent='最終 BOSS';
+ stageUI.bossStats.hidden=false;stageUI.bossStats.classList.add('charging');stageUI.bossMeter.hidden=true;stageUI.stage.textContent='最終 BOSS';
  stageUI.tapCount.textContent='0';stageUI.rootReadout.textContent=''; 
  UI.tip.textContent='剩餘時間瘋狂點螢幕！每點一下草根就更長！';
  toast('大草王出現！快點擊蓄力！',1450);
@@ -166,7 +179,7 @@ function timerExpired(){
  if(runPhase==='bossCharge'){
    runPhase='bossPull';boss.rootGoal=Math.round((1.8+boss.taps*.43)*10)/10;
    boss.rootDuration=clamp(2.3+boss.taps*.026,2.3,9.3);
-   stageUI.rootReadout.textContent='蓄力完成 · 目標 '+boss.rootGoal.toFixed(1)+' m';
+   stageUI.rootReadout.textContent='蓄力完成！長度未知';stageUI.bossStats.classList.remove('charging');
    UI.tip.textContent='時間到！從大草王往上滑，拔出超長草根！';
    toast('時間到！現在可以拔草王！',1850);
    pop(.95);buzz([30,80,25]);
@@ -287,10 +300,19 @@ function pointerDown(e){
 if(e.target!==canvas||UI.finish.classList.contains('show')||runPhase==='intro'||runPhase==='result')return;
 enableSound();const pos=eventXY(e);UI.help.classList.remove('show');
 if(runPhase==='bossCharge'){
- boss.taps++;boss.pulse=1;stageUI.tapCount.textContent=String(boss.taps);
- ring(pos.x,pos.y,rand(20,38));const base=project(0,.50);
- if(boss.taps%2===0)emit(base.x,base.y,7,'#cfac7c',.7);
- if(boss.taps%3===0){pop(.27);buzz(9)}
+ // Every pointer-down must have a separate visual, audio and haptic reaction.
+ boss.taps++;boss.pulse=1;boss.hitShake=1;
+ stageUI.tapCount.textContent=String(boss.taps);
+ boss.hitSparks.push({x:pos.x,y:pos.y,age:0,life:.34,angle:rand(-1,1),label:boss.taps});
+ if(boss.hitSparks.length>38)boss.hitSparks.shift();
+ const base=project(0,.50);
+ ring(pos.x,pos.y,rand(23,40));
+ ring(base.x,base.y,rand(38,65));
+ emit(base.x+rand(-12,12),base.y,5,'#e7c892',.95);
+ emit(pos.x,pos.y,3,'#ffebad',.68);
+ pop(.52);noiseSound(.085,440,.09);buzz(10);
+ // Count updated synchronously on each tap. Rendering uses individual hit events,
+ // so several quick taps inside one frame still each get their own impact.
  e.preventDefault();return;
 }
 if(runPhase==='bossPull'){
@@ -325,7 +347,7 @@ if(!pointer||e.pointerId!==pointer.id)return;
 e.preventDefault();const pos=eventXY(e);
 if(pointer.type==='boss'){
  const delta=Math.max(0,pointer.lastY-pos.y);pointer.lastY=pos.y;pointer.dy+=delta;
- if(pointer.dy>42&&runPhase==='bossPull'){pointer=null;runPhase='bossExtract';boss.extractionTime=0;boss.rootNow=0;boss.lastSoundAt=0;toast('啵——！草根開始抽出！',1550);pop(1.1);buzz([25,45,22]);}
+ if(pointer.dy>42&&runPhase==='bossPull'){pointer=null;runPhase='bossExtract';boss.extractionTime=0;boss.rootNow=0;boss.lastSoundAt=0;stageUI.bossMeter.hidden=false;stageUI.bossMeters.textContent='0.0';stageUI.bossStats.hidden=true;UI.tip.textContent='拔出多少才知道！草根正在瘋狂噴出！';toast('啵——！草根開始抽出！',1250);pop(1.1);buzz([25,45,22]);}
  return;
 }
 if(runPhase!=='field')return;
@@ -534,11 +556,11 @@ for(const p of g.members){
 }
 UI.done.textContent=String(removed);
 if(perfect>0&&runPhase==='field'){
-  deadline+=perfect*1000;
+  deadline+=perfect*500;
   remainingMs=Math.max(0,deadline-performance.now());
   stageUI.timer.textContent=(remainingMs/1000).toFixed(1);
   bonusDisplayUntil=performance.now()+1050;
-  stageUI.timeBonus.textContent='+'+perfect+' 秒';
+  stageUI.timeBonus.textContent='+'+(perfect*.5).toFixed(1)+' 秒';
   stageUI.timeBonus.classList.add('show');
 }
 const at=project(g.cx,g.cz);ring(at.x,at.y,Math.min(95,25+successful*5));
@@ -585,10 +607,10 @@ function drawBossRoot(){
  }
  // Central heavy root with two lighter moving highlights.
  ctx.shadowColor='#4e3c2b88';ctx.shadowBlur=8;ctx.shadowOffsetX=3;
- ctx.strokeStyle='#563a2a';ctx.lineWidth=18;ctx.stroke();
+ ctx.strokeStyle='#563a2a';ctx.lineWidth=34;ctx.stroke();
  ctx.shadowBlur=0;ctx.shadowOffsetX=0;
- ctx.strokeStyle='#cda879';ctx.lineWidth=13;ctx.stroke();
- ctx.strokeStyle='#f6deb4';ctx.lineWidth=3.3;
+ ctx.strokeStyle='#cda879';ctx.lineWidth=27;ctx.stroke();
+ ctx.strokeStyle='#f6deb4';ctx.lineWidth=6;
  const travel=sec*clamp(430+boss.taps*20,480,1900);
  ctx.setLineDash([37,22]);ctx.lineDashOffset=-travel;
  ctx.stroke();ctx.setLineDash([]);
@@ -596,7 +618,7 @@ function drawBossRoot(){
  const gap=26,phase=travel%gap;
  for(let j=0;j<Math.ceil(visibleLength/gap)+2;j++){
   const dist=j*gap+phase;if(dist<4||dist>=visibleLength-4)continue;
-  const y=origin.y-dist,x=wavyX(y),dir=j%2?1:-1,twig=9+(j%4)*3;
+  const y=origin.y-dist,x=wavyX(y),dir=j%2?1:-1,twig=14+(j%4)*4;
   ctx.strokeStyle=j%3?'#e6c598':'#a98860';ctx.lineWidth=1.7;
   ctx.beginPath();ctx.moveTo(x,y);
   ctx.quadraticCurveTo(x+dir*twig*.76,y+3,x+dir*twig,y+8+(j%3)*3);ctx.stroke();
@@ -613,23 +635,54 @@ function drawBossRoot(){
  // Big crown exits entirely; the root continues erupting for the remaining duration.
  if(headY>-S*3.5)bossPlantAt(wavyX(headY),headY,.92);
 }
+function drawBossHitSparks(){
+ for(const spark of boss.hitSparks){
+  const t=clamp(spark.age/spark.life,0,1),o=1-t;
+  ctx.save();ctx.translate(spark.x,spark.y-t*52);
+  ctx.rotate(spark.angle*.10);ctx.globalAlpha=o;
+  const radius=22+t*26;
+  ctx.strokeStyle='#fff0aa';ctx.lineWidth=3.7*o;
+  ctx.beginPath();ctx.arc(0,0,radius,0,R);ctx.stroke();
+  // Each tap gets its own burst, including taps occurring between consecutive frames.
+  for(let j=0;j<7;j++){
+   const a=j*R/7+spark.angle,inner=13+t*21,outer=inner+15*o;
+   ctx.beginPath();ctx.moveTo(Math.cos(a)*inner,Math.sin(a)*inner);
+   ctx.lineTo(Math.cos(a)*outer,Math.sin(a)*outer);
+   ctx.stroke();
+  }
+  ctx.font='900 '+Math.round(25+15*o)+'px system-ui';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.lineWidth=3.5;ctx.strokeStyle='#754829';ctx.strokeText('+'+1,0,-9);
+  ctx.fillStyle='#fff5c6';ctx.fillText('+1',0,-9);
+  ctx.restore();
+ }
+ ctx.globalAlpha=1;
+}
 function drawBoss(){
  const origin=project(0,.50);
  ctx.save();
+ const hit=runPhase==='bossCharge'?boss.hitShake:0;
+ ctx.translate(origin.x,origin.y);
+ if(hit>.01){
+  const wave=Math.sin(time*48+boss.taps*1.31);
+  ctx.translate((boss.taps%2?1:-1)*hit*(8+Math.abs(wave)*5),hit*(3+wave*2));
+  ctx.scale(1+hit*.075,1-hit*.10);
+ }
+ ctx.translate(-origin.x,-origin.y);
  oval(origin.x,origin.y,43,17,'#65533898');
- ctx.strokeStyle='#d7bd91';ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(origin.x,origin.y,44,18,0,0,R);ctx.stroke();
- if(runPhase==='bossExtract'){
-  drawBossRoot();
- }else if(runPhase==='bossCharge'){
-  const swell=1+Math.min(.17,boss.taps*.002)+boss.pulse*.07;
+ ctx.strokeStyle='#d7bd91';ctx.lineWidth=2.5;
+ ctx.beginPath();ctx.ellipse(origin.x,origin.y,44,18,0,0,R);ctx.stroke();
+ if(runPhase==='bossExtract')drawBossRoot();
+ else if(runPhase==='bossCharge'){
+  const swell=1+Math.min(.17,boss.taps*.002)+boss.pulse*.09;
   bossPlantAt(origin.x,origin.y,swell);
   if(boss.pulse>.05){
-   ctx.strokeStyle='rgba(235,214,144,'+boss.pulse*.46+')';
-   ctx.lineWidth=2.8;ctx.beginPath();ctx.ellipse(origin.x,origin.y,50+boss.pulse*40,20+boss.pulse*15,0,0,R);ctx.stroke();
+   ctx.strokeStyle='rgba(251,225,139,'+boss.pulse*.72+')';
+   ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(origin.x,origin.y,49+boss.pulse*45,20+boss.pulse*16,0,0,R);ctx.stroke();
   }
  }else if(runPhase==='bossPull')bossPlantAt(origin.x,origin.y,1.1);
- // After extraction, do not resurrect the boss behind the results screen.
  ctx.restore();
+ if(runPhase==='bossCharge')drawBossHitSparks();
 }
 function frame(now){
 const dt=Math.min(.05,(now-last||16)/1000);last=now;time+=dt;
@@ -660,17 +713,27 @@ if(runPhase==='field'||runPhase==='transition'){
   else enterBoss();
  }
 }
-if(runPhase==='bossCharge')boss.pulse=Math.max(0,boss.pulse-dt*4.3);
+if(runPhase==='bossCharge'){
+ boss.pulse=Math.max(0,boss.pulse-dt*6.5);
+ boss.hitShake=Math.max(0,boss.hitShake-dt*9.0);
+ for(let i=boss.hitSparks.length-1;i>=0;i--){
+  const s=boss.hitSparks[i];s.age+=dt;
+  if(s.age>=s.life)boss.hitSparks.splice(i,1);
+ }
+}
 if(runPhase==='bossExtract'){
  boss.extractionTime+=dt;
- const x=smooth(clamp(boss.extractionTime/boss.rootDuration,0,1));
- boss.rootNow=boss.rootGoal*x;
- stageUI.rootReadout.textContent=boss.rootNow.toFixed(1)+' / '+boss.rootGoal.toFixed(1)+' m';
+ const fraction=clamp(boss.extractionTime/boss.rootDuration,0,1);
+ // Fast accelerating number reveal. No maximum is shown until the result.
+ const shown=Math.pow(fraction,.78);
+ boss.rootNow=boss.rootGoal*shown;
+ stageUI.bossMeters.textContent=boss.rootNow.toFixed(1);
+ stageUI.bossMeter.querySelector('.meterNumbers').style.transform='scale('+(1+.035*Math.sin(boss.extractionTime*53)+.022*Math.sin(boss.extractionTime*17))+')';
  if(boss.extractionTime-boss.lastSoundAt>.092){
    boss.lastSoundAt=boss.extractionTime;
    if(boss.extractionTime<boss.rootDuration){pop(.20+rand(0,.17));noiseSound(.06,780,.06);const at=project(0,.50);emit(at.x,at.y,5,'#d0ad82',.76)}
  }
- if(boss.extractionTime>=boss.rootDuration){boss.rootNow=boss.rootGoal;showResults(true)}
+ if(boss.extractionTime>=boss.rootDuration){boss.rootNow=boss.rootGoal;stageUI.bossMeters.textContent=boss.rootGoal.toFixed(1);showResults(true)}
 }
 for(const p of plants)if(p.state==='live'&&p.tug>.001&&(!pointer||pointer.weed!==p))p.tug=Math.max(0,p.tug-dt*.8);
 if(toastUntil&&now>toastUntil){UI.toast.classList.remove('show');toastUntil=0}
