@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#e8efdf">
-<title>拔草模擬器｜60秒拔草挑戰 v0.6.4</title>
+<title>拔草模擬器｜60秒拔草挑戰 v0.6.5</title>
 <style>
 :root{color-scheme:light;--green:#263f31;--muted:#6e806e;--light:#f8faf4;--edge:#d7e0d0}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -73,16 +73,22 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
 #bossStats.charging b{font-size:32px;color:#854319}
 #bossStats.charging .meterTapCount{display:inline-block;transform-origin:center}
 @media(max-height:640px){#bossMeter{top:29%}.meterNumbers strong{font-size:clamp(65px,16vh,110px)}}
+
+/* Keep sound control at the top right, above the weed count, without blocking play. */
+.headActions{display:flex;flex-direction:column;align-items:flex-end;gap:7px;pointer-events:auto;flex-shrink:0}
+#head .headActions .counter{margin-left:0}
+#sound{min-height:34px;padding:0 12px;font-size:12px;border-radius:12px;background:#fcfff6ef;box-shadow:0 4px 12px #52644f18}
+@media(max-width:390px){.headActions{gap:5px}#sound{min-height:32px;padding:0 9px;font-size:11px}}
 </style>
 </head>
 <body>
 <canvas id="scene" aria-label="2.5D 拔草遊戲，按住雜草往畫面上方拉"></canvas>
 <div id="hud">
- <div id="head"><div><div class="eyebrow">ARMY / GARDEN · 2.5D</div><h1>拔草模擬器</h1><div class="note">挺立＝沒鬆 · 舒展＝剛好 · 枯黃＝鏟過頭</div></div><div class="counter" id="plantCounter"><b id="done">0</b><small> / <span id="total">0</span> 叢</small></div></div>
+ <div id="head"><div><div class="eyebrow">ARMY / GARDEN · 2.5D</div><h1>拔草模擬器</h1><div class="note">挺立＝沒鬆 · 舒展＝剛好 · 枯黃＝鏟過頭</div></div><div class="headActions"><button id="sound" aria-label="音效開關">🔊 音效</button><div class="counter" id="plantCounter"><b id="done">0</b><small> / <span id="total">0</span> 叢</small></div></div></div>
  <div id="challengebar"><div id="stageText">第 1 / 3 片</div><div class="timevalue"><b id="seconds">60.0</b><span>秒</span></div><span id="timeBonus" aria-live="polite"></span></div>
  <div id="bossStats" hidden><b id="tapCount">0</b><span> 次蓄力</span><strong id="rootReadout"></strong></div>
  <div id="bossMeter" aria-live="off" hidden><div class="meterCaption">草根長度 · 正在爆衝</div><div class="meterNumbers"><strong id="bossMeters">0.0</strong><span>m</span></div><div class="meterUnderline"></div></div>
- <div id="footer"><div id="tip">先選鏟子挖土，想拔草再選「手」</div><div id="buttons"><button id="sound">🔊 音效</button><button id="reset">重新挑戰</button></div></div>
+ <div id="footer"><div id="tip">先選鏟子挖土，想拔草再選「手」</div><div id="buttons"><button id="reset">重新挑戰</button></div></div>
  <div id="tools" role="group" aria-label="選擇操作工具">
  <button id="handTool" aria-label="切換成手拔草"><span class="toolIcon">✋</span><span>手</span></button>
  <button id="shovelTool" class="selected" aria-label="切換成鏟子鬆土"><svg class="toolIcon" viewBox="0 0 42 42" aria-hidden="true"><path d="M24 7L14 25" fill="none" stroke="currentColor" stroke-width="4.6" stroke-linecap="round"/><path d="M28.2 4.7l-4.4-2.4-6 10.6 4.4 2.3z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/><path d="M13.6 24.6c-3.9 1.4-8.1 4.7-6.9 10.2l7.6 4.3c4.8-3.7 5.6-8.6 4.5-12.3z" fill="currentColor" opacity=".91"/></svg><span>鏟子</span></button>
@@ -91,7 +97,7 @@ button.primary{background:#315c41;border-color:#315c41;color:#fff}
 <div id="modeGuide">目前：鏟子</div><div id="message"></div><div id="help" class="show">先用鏟子挖鬆土壤，再切換手拔草</div>
 <div id="welcome" class="modal"><div class="card"><div class="big">🌱</div><h2>60 秒拔草挑戰</h2><p>共有三片草地，完成一片自動換下一片。<br>全部清完會出現大草王！<br>剩下的時間瘋狂點擊蓄力，倒數結束後往上拉，看看草根到底有多長。</p><button id="start" class="primary">開始挑戰</button></div></div>
 <div id="finish"><div class="card"><div class="big">🌱</div><h2 id="finishTitle">斬草除根。</h2><p id="report">班長說：旁邊還有一片。</p><button id="again" class="primary">再挑戰一次</button></div></div>
-<div class="version">獨立試玩 · v0.6.4</div>
+<div class="version">獨立試玩 · v0.6.5</div>
 <script>
 
 
@@ -106,7 +112,7 @@ challenge:document.getElementById('challengebar'),bossStats:document.getElementB
 tapCount:document.getElementById('tapCount'),rootReadout:document.getElementById('rootReadout'),bossMeter:document.getElementById('bossMeter'),bossMeters:document.getElementById('bossMeters'),
 finishTitle:document.getElementById('finishTitle'),counter:document.getElementById('plantCounter'),
 tools:document.getElementById('tools'),reset:document.getElementById('reset')};
-let W=0,H=0,DPR=1,S=38,baseY=450,time=0,last=0,tool='shovel',plants=[],soilMarks=[],holes=[],groups=[],particles=[],rings=[],shovels=[],strokeSerial=0,lastDigDustAt=-1000,lastDigSoundAt=-1000;
+let W=0,H=0,DPR=1,S=38,SX=38,SZ=38,baseY=450,time=0,last=0,tool='shovel',plants=[],soilMarks=[],holes=[],groups=[],particles=[],rings=[],shovels=[],strokeSerial=0,lastDigDustAt=-1000,lastDigSoundAt=-1000;
 let pointer=null,total=0,removed=0,brokenTotal=0,toastUntil=0,finishAt=0,audioCtx=null,noise=null,mute=false,seed=Math.random()*999;
 let runPhase='intro',mapNumber=1,deadline=0,remainingMs=DURATION_MS,completedMaps=0,totalWeedsCleared=0,allBreaks=0,bonusDisplayUntil=0;
 let boss={taps:0,pulse:0,extractionTime:0,rootNow:0,rootGoal:0,rootDuration:0,lastSoundAt:0,hitShake:0,hitSparks:[]};
@@ -115,9 +121,22 @@ function smooth(x){x=clamp(x,0,1);return x*x*(3-2*x)}
 function key(ix,iz){return ix+','+iz}
 function coord(x,z){return{ix:Math.floor(x/CELL),iz:Math.floor(z/CELL)}}
 function inside(x,z){return x*x/(4.78*4.78)+z*z/(4.39*4.39)<.97}
-function project(x,z,y=0){const k=1-z*.021;return{x:W*.5+x*S*k,y:baseY+z*S*.67-x*S*.08-y*S*.98}}
-function unproject(px,py){let z=(py-baseY)/(S*.67),x=0;for(let i=0;i<5;i++){x=(px-W*.5)/(S*(1-z*.021));z=(py-baseY+x*S*.08)/(S*.67)}return{x,z}}
-function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(2,devicePixelRatio||1);canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);S=Math.min(76,W/9.85,H/12.3);baseY=H*(H<620?.57:.582)}
+// Independent perspective axes fill the available screen instead of letterboxing a tiny patch.
+function project(x,z,y=0){const k=1-z*.021;return{x:W*.5+x*SX*k,y:baseY+z*SZ-x*S*.08-y*S*.98}}
+function unproject(px,py){
+ let z=(py-baseY)/SZ,x=0;
+ for(let i=0;i<5;i++){x=(px-W*.5)/(SX*(1-z*.021));z=(py-baseY+x*S*.08)/SZ}
+ return{x,z};
+}
+function resize(){
+ W=innerWidth;H=innerHeight;DPR=Math.min(2,devicePixelRatio||1);
+ canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
+ ctx.setTransform(DPR,0,0,DPR,0,0);
+ S=Math.min(96,W/7.4,H/8.1);  // Large, finger-friendly individual grass
+ SX=W/8.85;                  // Wide terrain reaches beyond the left/right edges
+ SZ=H*.075;                 // Stronger depth perspective fills the vertical space
+ baseY=H*.545;
+}
 addEventListener('resize',resize,{passive:true});resize();
 function enableSound(){if(mute)return;try{if(!audioCtx){const AC=window.AudioContext||window.webkitAudioContext;audioCtx=new AC();noise=audioCtx.createBuffer(1,Math.round(audioCtx.sampleRate*.26),audioCtx.sampleRate);const p=noise.getChannelData(0);for(let i=0;i<p.length;i++)p[i]=Math.random()*2-1}if(audioCtx.state==='suspended')audioCtx.resume()}catch(e){}}
 function noiseSound(volume,freq,dur){if(!audioCtx||mute||!noise)return;try{const now=audioCtx.currentTime,s=audioCtx.createBufferSource(),f=audioCtx.createBiquadFilter(),g=audioCtx.createGain();s.buffer=noise;f.type='bandpass';f.frequency.value=freq;f.Q.value=.6;g.gain.setValueAtTime(Math.max(.0001,volume),now);g.gain.exponentialRampToValueAtTime(.0001,now+dur);s.connect(f);f.connect(g);g.connect(audioCtx.destination);s.start(now);s.stop(now+dur)}catch(e){}}
@@ -141,7 +160,7 @@ function loadPatch(index){
   const count=7+(index-1)*2;
   let attempts=0;
   while(plants.length<count&&attempts++<1600){
-    const x=rand(-3.05,3.05),z=rand(-2.60,2.80);if(!inside(x,z))continue;
+    const x=rand(-3.7,3.7),z=rand(-3.28,3.37);if(!inside(x,z))continue;
     let valid=true;
     for(const p of plants)if(Math.hypot((p.x-x)*1.04,(p.z-z)*.92)<.90){valid=false;break}
     if(valid)plants.push(makePlant(x,z,Math.random()<.25?'tough':'normal'));
@@ -392,8 +411,8 @@ function drawSurface(){
  // Draw soft, organically blending loosened soil. Connectivity is based on overlapping dig marks,
  // never on square tiles; the ground is not lifted when weeds are pulled.
  for(const m of soilMarks){
-   const p=project(m.x,m.z),rx=m.r*S*(1-m.z*.021),ry=rx*.67;
-   ctx.save();ctx.translate(p.x,p.y);ctx.scale(1,.67);
+   const p=project(m.x,m.z),rx=m.r*SX*(1-m.z*.021),ry=m.r*SZ;
+   ctx.save();ctx.translate(p.x,p.y);ctx.scale(1,ry/rx);
    const soft=ctx.createRadialGradient(0,0,1,0,0,rx*1.26);
    const weight=clamp(m.strength,1,5);
    soft.addColorStop(0,'rgba(83,65,45,'+(.58+weight*.052)+')');
