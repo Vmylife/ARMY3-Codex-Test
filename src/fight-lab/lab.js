@@ -7,11 +7,14 @@ import {mul,translation,rotateY} from '../core/math.js?v=060';
 import {FightEngine,ATTACKS,LAUNCH_AFTER_DAMAGE} from './engine.js?v=8';
 import {installUserCombatClips} from './uploadedHitAnimations.js?v=1';
 import {setupInput} from '../ui/input.js?v=062';
-import {RifleRenderer} from './rifleRenderer.js?v=1';
+import {PistolRenderer} from './pistolRenderer.js?v=1';
 
 const $=id=>document.getElementById(id);
 const e=new FightEngine();
-let renderer=null,ground=null,actors=null,rifle=null,rifleActor=null,ready=false,last=0,shake=0,noticeUntil=0,roundSerial=0,audio=null,sample=null;
+const SLOW_MOTION=.12;
+let wheelOpen=false,wheelSelection='up',wheelPointer=null,wheelOverlayPointer=null,suppressWheelClick=false;
+const WEAPON_SLOTS={up:{weapon:'fists',name:'拳頭'},right:{weapon:'pistol',name:'手槍'},bottom:{weapon:null,name:'未解鎖'},left:{weapon:null,name:'未解鎖'}};
+let renderer=null,ground=null,actors=null,pistol=null,pistolActor=null,ready=false,last=0,shake=0,noticeUntil=0,roundSerial=0,audio=null,sample=null;
 let gunAudioBuffer=null,gunAudioPromise=null;
 const tracerNodes=new Map();
 let input=()=>({x:0,y:0,magnitude:0});
@@ -76,6 +79,23 @@ function renderFloor(){
  gl.uniformMatrix4fv(renderer.flatVP,false,renderer.vp);
  gl.bindVertexArray(ground.vao);gl.drawArrays(gl.TRIANGLES,0,ground.count);gl.bindVertexArray(null);
 }
+function poseFloorLift(asset,anim,pose){
+ // Evaluate the rotated, skinned corpse's lowest sampled point above the floor.
+ let lowest=Infinity;
+ for(const s of asset.sample||[]){
+  let x=0,y=0,z=0;
+  for(let k=0;k<4;k++){
+   const weight=s.w[k];if(weight<=0)continue;
+   const b=s.j[k]*16,px=s.p[0],py=s.p[1],pz=s.p[2],m=anim.bones;
+   x+=weight*(m[b]*px+m[b+4]*py+m[b+8]*pz+m[b+12]);
+   y+=weight*(m[b+1]*px+m[b+5]*py+m[b+9]*pz+m[b+13]);
+   z+=weight*(m[b+2]*px+m[b+6]*py+m[b+10]*pz+m[b+14]);
+  }
+  lowest=Math.min(lowest,pose[1]*x+pose[5]*y+pose[9]*z+pose[13]);
+ }
+ return Number.isFinite(lowest)?Math.max(0,.115-lowest):0;
+}
+function isRestingDead(f){return f.hp<=0&&Number.isFinite(f.deathAt)&&e.time-f.deathAt>=.75&&f.airTime<=0}
 function lowFootLift(asset,anim){
  if(!['Knock_Down','Arise','BeHit_FlyUp','falling_down','Hit_Reaction','Block2'].includes(anim.clip)||!asset?.sample?.length)return 0;
  let low=Infinity;
@@ -92,9 +112,14 @@ function drawFighter(f,actor){
  const r=renderer,gl=r.gl,a=r.assets.get('duelist'),anim=actor.anim;
  if(!a)return;
  // Additive torso recoil around the waist, ON TOP of the original punch/knockdown animation.
- const lean=clamp(f.lean+(f.id==='player'&&e.weapon==='rifle'?(f.gunKick||0):0),-.65,.30);
- const pivot=mul(translation(0,.77,0),mul(rotateX(lean),translation(0,-.77,0)));
- const model=mul(translation(f.x,lowFootLift(a,anim)+.095+(f.airHeight||0),f.z),mul(rotateY(f.angle),pivot));
+ const deadRest=isRestingDead(f);
+ const lean=clamp(f.lean+(f.id==='player'&&e.weapon==='pistol'?(f.gunKick||0):0),-.65,.30);
+ // Negative X rotation turns the chest UP for a relaxed supine corpse.
+ const pivot=deadRest?
+  mul(translation(0,.75,0),mul(rotateX(-Math.PI/2),translation(0,-.75,0))):
+  mul(translation(0,.77,0),mul(rotateX(lean),translation(0,-.77,0)));
+ const lift=deadRest?poseFloorLift(a,anim,pivot):lowFootLift(a,anim)+.095+(f.airHeight||0);
+ const model=mul(translation(f.x,lift,f.z),mul(rotateY(f.angle),pivot));
  gl.useProgram(r.p);
  gl.uniformMatrix4fv(r.uniforms.vp,false,r.vp);
  gl.uniformMatrix4fv(r.uniforms.model,false,model);
@@ -108,7 +133,7 @@ function drawFighter(f,actor){
 const CLIP={idle:'Idle',walk:'Walking',attack:'Punch_Combo_1',hit:'Hit_Reaction',down:'falling_down',rise:'Arise'};
 function syncActor(f,actor,dt){
  const anim=actor.anim;
- let clip=CLIP[f.state]||'Idle';
+ let clip=isRestingDead(f)?'Idle':CLIP[f.state]||'Idle';
  if(f.state==='hit')clip=f.impactAnim||'Hit_Reaction';
  if(f.state==='walk'){
   clip=f.id==='player'?(f.moveSpeed>=7?'RunFast':f.moveSpeed>=4.2?'Running':'Walking')
@@ -117,7 +142,7 @@ function syncActor(f,actor,dt){
  if(!anim.hasClip(clip))clip=anim.hasClip('Walking')?'Walking':Object.keys(anim.clips)[0];
  if(clip!==actor.clip){
   anim.setClip(clip,{restart:true});
-  if(f.state==='attack'||f.state==='down'||f.state==='rise'){anim.transition=0;anim.prevClip=null}
+  if(f.state==='attack'||f.state==='down'||f.state==='rise'||isRestingDead(f)){anim.transition=0;anim.prevClip=null}
   actor.clip=clip;
  }
  if(f.state==='attack'&&f.attack){
@@ -137,7 +162,7 @@ function syncActor(f,actor,dt){
     :clamp((f.moveSpeed||2.6)/2.7,.72,1.08);
  }else anim.speed=1;
  if(f.id==='player'){
-  const target=e.weapon==='rifle'&&!['hit','down','rise'].includes(f.state)?1:0;
+  const target=e.weapon==='pistol'&&f.hp>0&&!['hit','down','rise'].includes(f.state)?1:0;
   anim.rifleAim=lerp(anim.rifleAim||0,target,dt*13);
  }
  anim.evaluate(dt);
@@ -209,12 +234,12 @@ function preloadGunSound(){
   .then(buffer=>{gunAudioBuffer=buffer})
   .catch(error=>{console.warn('步槍音效讀取失敗，繼續使用合成槍聲',error);gunAudioPromise=null});
 }
-function rifleSound(){
+function pistolSound(){
  const ctx=unlockAudio();if(!ctx)return;
  if(gunAudioBuffer){
   const source=ctx.createBufferSource(),gain=ctx.createGain();
-  source.buffer=gunAudioBuffer;source.playbackRate.value=.97+Math.random()*.055;
-  gain.gain.value=.63;source.connect(gain);gain.connect(ctx.destination);source.start(ctx.currentTime);
+  source.buffer=gunAudioBuffer;source.playbackRate.value=1.22+Math.random()*.09;
+  gain.gain.value=.52;source.connect(gain);gain.connect(ctx.destination);source.start(ctx.currentTime);
  }else{
   // The first shot remains immediate while Safari decodes the original rifle sample.
   noise(.17,.45,2800);noise(.10,.21,750);
@@ -248,31 +273,107 @@ function drawTracers(){
  for(const [id,node] of tracerNodes)if(!live.has(id)){node.remove();tracerNodes.delete(id)}
 }
 function syncWeaponControls(){
- const rifleMode=e.weapon==='rifle';
- $('weaponIcon').textContent=rifleMode?'✊':'🔫';
- $('weaponLabel').textContent=rifleMode?'收槍':'拿槍';
- $('attackIcon').textContent=rifleMode?'🔫':'✊';
- $('attackLabel').textContent=rifleMode?'開火':'攻擊';
- $('weaponSwitch').setAttribute('aria-pressed',String(rifleMode));
- $('attack').classList.toggle('rifle',rifleMode);
+ const armed=e.weapon==='pistol';
+ $('weaponIcon').textContent='◉';
+ $('weaponLabel').textContent='武器';
+ $('attackIcon').textContent=armed?'🔫':'✊';
+ $('attackLabel').textContent=armed?'開火':'攻擊';
+ $('weaponSwitch').setAttribute('aria-pressed',String(armed));
+ $('attack').classList.toggle('pistol',armed);
 }
-function toggleWeapon(){
- if(!ready||!rifle)return false;
- unlockAudio();
- const ok=e.switchWeapon();
- if(ok){
-  if(e.weapon==='rifle')preloadGunSound();
+function highlightWheel(dir){
+ if(!WEAPON_SLOTS[dir])return;
+ wheelSelection=dir;
+ for(const item of document.querySelectorAll('.wheelSlot'))item.classList.toggle('selected',item.dataset.slot===dir);
+ const slot=WEAPON_SLOTS[dir];$('wheelChoice').textContent=slot.weapon?slot.name:'尚未解鎖';
+}
+function directionFromDrag(dx,dy){
+ if(Math.hypot(dx,dy)<26)return null;
+ return Math.abs(dx)>=Math.abs(dy)?(dx>=0?'right':'left'):(dy>=0?'bottom':'up');
+}
+function openWeaponWheel(){
+ if(!ready||!pistol||e.winner||wheelOpen)return false;
+ wheelOpen=true;wheelSelection=e.weapon==='pistol'?'right':'up';
+ $('weaponWheel').hidden=false;$('weaponWheel').setAttribute('aria-hidden','false');
+ $('weaponSwitch').setAttribute('aria-expanded','true');
+ document.body.classList.add('weaponWheelOpen');
+ highlightWheel(wheelSelection);
+ return true;
+}
+function finishWeaponWheel(choose=true){
+ if(!wheelOpen)return;
+ const picked=WEAPON_SLOTS[wheelSelection];
+ wheelOpen=false;wheelPointer=null;wheelOverlayPointer=null;
+ $('weaponWheel').hidden=true;$('weaponWheel').setAttribute('aria-hidden','true');
+ $('weaponSwitch').setAttribute('aria-expanded','false');
+ document.body.classList.remove('weaponWheelOpen');
+ if(!choose)return;
+ if(!picked.weapon){tell('這個欄位還沒有武器',950);return}
+ const changed=e.selectWeapon(picked.weapon);
+ if(changed){
+  if(picked.weapon==='pistol')preloadGunSound();
   syncWeaponControls();react();
-  tell(e.weapon==='rifle'?'步槍模式：前方左右各 7.5° 自動鎖定！':'拳頭模式：靠近阿兵哥再攻擊！',1700);
+  tell(picked.weapon==='pistol'?'手槍：單發射擊 · 前方 15° 自動追蹤':'拳頭：靠近對手出拳',1200);
  }
- return ok;
+}
+function weaponWheelControls(){
+ const switcher=$('weaponSwitch'),overlay=$('weaponWheel'),disc=$('wheelDisc');
+ switcher.addEventListener('pointerdown',event=>{
+  if(event.pointerType==='mouse'&&event.button!==0)return;
+  if(!openWeaponWheel())return;
+  wheelPointer={id:event.pointerId,x:event.clientX,y:event.clientY,moved:false};
+  suppressWheelClick=true;
+  try{switcher.setPointerCapture(event.pointerId)}catch{}
+  event.preventDefault();
+ });
+ switcher.addEventListener('pointermove',event=>{
+  if(!wheelPointer||wheelPointer.id!==event.pointerId)return;
+  const dir=directionFromDrag(event.clientX-wheelPointer.x,event.clientY-wheelPointer.y);
+  if(dir){wheelPointer.moved=true;highlightWheel(dir)}
+ });
+ switcher.addEventListener('pointerup',event=>{
+  if(!wheelPointer||wheelPointer.id!==event.pointerId)return;
+  const dragged=wheelPointer.moved;wheelPointer=null;
+  if(dragged)finishWeaponWheel(true); // Hold + swipe + release
+  event.preventDefault();
+ });
+ switcher.addEventListener('pointercancel',()=>{wheelPointer=null;finishWeaponWheel(false)});
+ switcher.addEventListener('click',event=>{
+  event.preventDefault();
+  if(suppressWheelClick){suppressWheelClick=false;return}
+  if(!wheelOpen)openWeaponWheel();else finishWeaponWheel(false);
+ });
+ const fromDiscPointer=event=>{
+  const rect=disc.getBoundingClientRect();
+  return directionFromDrag(event.clientX-rect.left-rect.width/2,event.clientY-rect.top-rect.height/2);
+ };
+ overlay.addEventListener('pointerdown',event=>{
+  if(event.target===overlay){finishWeaponWheel(false);return}
+  const slot=event.target.closest('[data-slot]');
+  if(slot)highlightWheel(slot.dataset.slot);
+  wheelOverlayPointer={id:event.pointerId,cancelPressed:Boolean(event.target.closest('#wheelCancel'))};
+  try{overlay.setPointerCapture(event.pointerId)}catch{}
+  event.preventDefault();
+ });
+ overlay.addEventListener('pointermove',event=>{
+  if(!wheelOverlayPointer||event.pointerId!==wheelOverlayPointer.id)return;
+  const dir=fromDiscPointer(event);if(dir)highlightWheel(dir);
+ });
+ overlay.addEventListener('pointerup',event=>{
+  if(!wheelOverlayPointer||event.pointerId!==wheelOverlayPointer.id)return;
+  if(wheelOverlayPointer.cancelPressed){finishWeaponWheel(false);return}
+  const dir=fromDiscPointer(event);if(dir)highlightWheel(dir);
+  finishWeaponWheel(true);
+ });
+ overlay.addEventListener('pointercancel',()=>{wheelOverlayPointer=null;finishWeaponWheel(false)});
+ $('wheelCancel').addEventListener('click',()=>finishWeaponWheel(false));
 }
 
 function react(){
  for(const event of e.drain()){
   if(event.kind==='shot'){
-   if(rifleActor)rifleActor.shotUntil=performance.now()+110;
-   rifleSound();shake=Math.max(shake,.13);
+   if(pistolActor)pistolActor.shotUntil=performance.now()+110;
+   pistolSound();shake=Math.max(shake,.13);
    cameraPitch=clamp(cameraPitch-.014,.32,1.12);
    showMuzzle(event.at);
   }else if(event.kind==='swing'){
@@ -312,7 +413,7 @@ function updateHUD(){
   const fill=$(id+'HP'),txt=$(id+'HPText'),shown=Math.ceil(hp);
   if(fill.dataset.hp!==String(shown)){fill.style.width=hp+'%';fill.dataset.hp=String(shown);txt.textContent=shown+' / 100'}
  }
- $('attack').disabled=!ready||Boolean(e.winner);
+ $('attack').disabled=!ready||Boolean(e.winner)||wheelOpen;
  $('weaponSwitch').disabled=!ready||Boolean(e.winner);
  const active=e.opponents.filter(f=>f.hp>0).length;
  $('sceneStatus').textContent=e.winner?'格鬥結束':e.reinforcements?'1 對 4！所有友軍都來了':
@@ -335,14 +436,15 @@ function showEnd(winner){
 }
 function reset(){
  roundSerial++;
+ finishWeaponWheel(false);
  const settings={ai:$('counter').checked,difficulty:$('difficulty').value,weapon:e.weapon};
  e.reset();e.enableAI(settings.ai);e.difficulty=settings.difficulty;
- if(settings.weapon==='rifle')e.switchWeapon();
- clearTracers();if(rifleActor)rifleActor.shotUntil=0;
+ if(settings.weapon==='pistol')e.selectWeapon('pistol');
+ clearTracers();if(pistolActor)pistolActor.shotUntil=0;
  syncWeaponControls();
  $('endScreen').hidden=true;$('burstLayer').replaceChildren();$('combo').hidden=true;
  shake=0;last=0;if(renderer)renderer.cameraReady=false;
- tell(e.weapon==='rifle'?'步槍已就位，正前方 15° 內會自動追蹤！':'像在軍營一樣自由移動，面向對手再揮拳！',1700);updateHUD();
+ tell(e.weapon==='pistol'?'手槍已就位，正前方 15° 內會自動追蹤！':'像在軍營一樣自由移動，面向對手再揮拳！',1700);updateHUD();
  if(actors){for(const a of Object.values(actors)){a.clip='';a.anim.setClip('Idle',{restart:true});a.anim.evaluate(0)}}
 }
 function controls(){
@@ -355,11 +457,12 @@ function controls(){
  function playAction(){
   if(!ready)return;
   unlockAudio();
-  if(e.weapon==='rifle')e.shoot();else e.attack();
+  if(wheelOpen)return;
+  if(e.weapon==='pistol')e.shoot();else e.attack();
   react();updateHUD();
  }
  $('attack').addEventListener('click',playAction);
- $('weaponSwitch').addEventListener('click',toggleWeapon);
+ weaponWheelControls();
  $('reset').addEventListener('click',reset);$('again').addEventListener('click',reset);
  $('counter').addEventListener('change',event=>{
   e.enableAI(event.target.checked);
@@ -367,9 +470,17 @@ function controls(){
  });
  $('difficulty').addEventListener('change',event=>{e.difficulty=event.target.value});
  window.addEventListener('keydown',event=>{
-  if(!['KeyJ','KeyQ'].includes(event.code)||event.repeat)return;
-  event.preventDefault();
-  if(event.code==='KeyQ')toggleWeapon();else playAction();
+  if(event.code==='KeyQ'){event.preventDefault();if(!event.repeat)openWeaponWheel();return}
+  if(wheelOpen){
+   if(event.code==='Escape'){event.preventDefault();finishWeaponWheel(false)}
+   const dir={ArrowUp:'up',ArrowRight:'right',ArrowDown:'bottom',ArrowLeft:'left'}[event.code];
+   if(dir){event.preventDefault();highlightWheel(dir)}
+   return;
+  }
+  if(event.code==='KeyJ'&&!event.repeat){event.preventDefault();playAction()}
+ });
+ window.addEventListener('keyup',event=>{
+  if(event.code==='KeyQ'&&wheelOpen){event.preventDefault();finishWeaponWheel(true)}
  });
 }
 // Identical 3D directional basis as src/main111.js: camera-relative movement.
@@ -389,12 +500,13 @@ function frame(now){
  const dt=last?clamp((now-last)/1000,0,.055):0;
  last=now;
  if(document.hidden){last=0;return}
- e.step(dt,direction());
+ const simulationDt=dt*(wheelOpen?SLOW_MOTION:1);
+ e.step(simulationDt,direction());
  cameraZoom+=(targetZoom-cameraZoom)*Math.min(1,dt*12);
  react();
  const frozen=e.freeze>0;
- if(!frozen){syncActor(e.player,actors.player,dt);
-  for(const foe of e.opponents)syncActor(foe,actors[foe.id],dt);
+ if(!frozen){syncActor(e.player,actors.player,simulationDt);
+  for(const foe of e.opponents)syncActor(foe,actors[foe.id],simulationDt);
  }
  shake=Math.max(0,shake-dt*.73);
  const cameraJitter=shake*Math.sin(now*.091)*.075;
@@ -402,9 +514,9 @@ function frame(now){
  renderer.startFrame(e.player);
  renderFloor();const playerModel=drawFighter(e.player,actors.player);
  for(const foe of e.opponents)drawFighter(foe,actors[foe.id]);
- if(rifle&&e.weapon==='rifle'){
-  rifleActor.pos=e.player;rifleActor.angle=e.player.angle;
-  rifle.draw(renderer.vp,rifleActor,now,{actorModel:playerModel});
+ if(pistol&&e.weapon==='pistol'){
+  pistolActor.pos=e.player;pistolActor.angle=e.player.angle;
+  pistol.draw(renderer.vp,pistolActor,now,{actorModel:playerModel});
  }
  drawTracers();
  followLabel('playerLabel',e.player);followLabel('enemyLabel',e.enemy);
@@ -435,16 +547,13 @@ async function boot(){
    actors[foe.id]={anim,clip:''};
   }
   for(const actor of Object.values(actors)){actor.anim.setClip('Idle');actor.anim.evaluate(0)}
-  $('loadText').textContent='載入原本的步槍模型與槍口火光…';
-  const rifleGlb=await loadGlb('./assets/weapons/rifle.glb?v=111',{timeoutMs:45000});
-  rifle=new RifleRenderer(renderer.gl);rifle.addModel(rifleGlb);
-  // Calibrate the rifle at the original idle aiming pose. Thereafter the
-  // weapon follows the evaluated right-hand joint even while running.
+  $('loadText').textContent='建立立體手槍與槍口火光…';
+  pistol=new PistolRenderer(renderer.gl);pistol.addModel();
   const playerAnim=actors.player.anim;
   playerAnim.rifleAim=1;playerAnim.evaluate(0);
-  rifle.setGripReference(playerAnim.rightHandWorld);
+  pistol.setGripReference(playerAnim.rightHandWorld);
   playerAnim.rifleAim=0;playerAnim.evaluate(0);
-  rifleActor={pos:e.player,angle:e.player.angle,anim:playerAnim,shotUntil:0};
+  pistolActor={pos:e.player,angle:e.player.angle,anim:playerAnim,shotUntil:0};
   $('loadBar').style.width='100%';
   ready=true;$('loading').hidden=true;
   reset();requestAnimationFrame(frame);
@@ -462,10 +571,10 @@ window.armyFightLab={
   hasKnockdown:!!actors?.player.anim.hasClip('falling_down'),
   hasHitReaction:!!actors?.player.anim.hasClip('Hit_Reaction'),
   hasArise:!!actors?.player.anim.hasClip('Arise'),
-  hasBlock2:!!actors?.player.anim.hasClip('Block2')}},
+  hasBlock2:!!actors?.player.anim.hasClip('Block2'),wheelOpen}},
  attack:()=>{const ok=e.attack();react();return ok},
  reset,engine:e,
- toggleWeapon,fire:()=>{const ok=e.shoot();react();return ok},
+ openWeaponWheel,selectWeapon:weapon=>{const ok=e.selectWeapon(weapon);syncWeaponControls();react();return ok},fire:()=>{const ok=e.shoot();react();return ok},
  get camera(){return {yaw:cameraYaw,pitch:cameraPitch,zoom:cameraZoom,targetZoom}},
  get movement(){return direction()}
 };

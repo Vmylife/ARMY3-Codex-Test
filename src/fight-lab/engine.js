@@ -14,7 +14,7 @@ const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const createFighter=(id,x,z)=>({id,x,z,angle:id==='player'?Math.PI/2:-Math.PI/2,hp:100,
  state:'idle',attack:null,stun:0,down:0,rise:0,cd:0,moveSpeed:0,gunKick:0,
  pushX:0,pushZ:0,lean:0,airTime:0,airHeight:0,chain:0,chainAt:-99,damageSinceFall:0,
- impactAnim:'Hit_Reaction',fallen:false});
+ impactAnim:'Hit_Reaction',fallen:false,deathAt:Infinity});
 export class FightEngine{
  constructor(){this.reset()}
  reset(){
@@ -42,14 +42,16 @@ export class FightEngine{
  enableAI(on){this.aiEnabled=Boolean(on);
   if(!on)for(const f of this.opponents){f.attack=null;if(f.state==='attack')f.state='idle'}
  }
-  switchWeapon(){
-   if(this.winner||this.player.attack||['down','rise'].includes(this.player.state))return false;
-   this.weapon=this.weapon==='fists'?'rifle':'fists';
-   this.player.gunKick=0;this.emit('weapon',{weapon:this.weapon});return true;
+  selectWeapon(weapon){
+   if(!['fists','pistol'].includes(weapon)||this.winner||this.player.hp<=0||
+     this.player.attack||['down','rise','hit'].includes(this.player.state))return false;
+   if(this.weapon===weapon)return true;
+   this.weapon=weapon;this.player.gunKick=0;this.emit('weapon',{weapon});return true;
   }
+  switchWeapon(){return this.selectWeapon(this.weapon==='fists'?'pistol':'fists')}
   shoot(){
    const p=this.player;
-   if(this.weapon!=='rifle'||this.winner||p.hp<=0||p.attack||p.stun>0||
+   if(this.weapon!=='pistol'||this.winner||p.hp<=0||p.attack||p.stun>0||
      ['down','rise','hit'].includes(p.state)||this.shotCooldown>0)return false;
    const forwardX=Math.sin(p.angle),forwardZ=Math.cos(p.angle);
    // No full-screen targeting: only enemies within +/-7.5 degrees of player facing.
@@ -65,8 +67,8 @@ export class FightEngine{
    const angle=target?Math.atan2(target.x-p.x,target.z-p.z):p.angle;
    const dx=Math.sin(angle),dz=Math.cos(angle);
    // Spawn at the rifle muzzle and keep visible projectiles, not instant-hit rays.
-   const x=p.x+forwardX*.85-Math.cos(p.angle)*.085;
-   const z=p.z+forwardZ*.85+Math.sin(p.angle)*.085;
+   const x=p.x+forwardX*.73-Math.cos(p.angle)*.085;
+   const z=p.z+forwardZ*.73+Math.sin(p.angle)*.085;
    const bullet={id:this.nextBulletId++,x,z,prevX:x,prevZ:z,
     startX:x,startZ:z,dx,dz,angle,targetId:target?.id||null,remaining:28,speed:49,age:0};
    this.projectiles.push(bullet);this.shotsFired++;this.shotCooldown=.25;p.gunKick=.12;
@@ -129,7 +131,7 @@ export class FightEngine{
   const ko=b.hp<=0,down=ko||(b.damageSinceFall>LAUNCH_AFTER_DAMAGE);
   if(down){
    b.damageSinceFall=0;b.state='down';b.down=ko?5:2.0;b.stun=0;b.lean=0;b.fallen=true;
-   b.airTime=.63;b.airHeight=0;
+   b.airTime=.63;b.airHeight=0;if(ko)b.deathAt=this.time;
   }
   const push=down?12.0:def.push;
   b.pushX=fx*push;b.pushZ=fz*push;

@@ -5,14 +5,14 @@
  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
  <meta name="theme-color" content="#182c20">
  <title>國軍模擬器｜格鬥打擊實驗室</title>
- <link rel="stylesheet" href="./src/fight-lab/lab.css?v=4">
+ <link rel="stylesheet" href="./src/fight-lab/lab.css?v=5">
 </head>
 <body>
  <canvas id="arena" aria-label="3D軍營格鬥實驗場"></canvas>
  <div id="flash" aria-hidden="true"></div>
  <div id="burstLayer" aria-hidden="true"></div>
  <header class="header">
-  <div class="headerLeft"><div class="eyebrow">ARMY3 · COMBAT TEST</div><h1>格鬥打擊實驗室 <small>V2.3</small></h1></div>
+  <div class="headerLeft"><div class="eyebrow">ARMY3 · COMBAT TEST</div><h1>格鬥打擊實驗室 <small>V2.4</small></h1></div>
   <a class="exit" href="./index.html?v=205">← 返回測試首頁</a>
  </header>
  <section class="scores" aria-label="雙方狀態">
@@ -43,18 +43,29 @@
  <div id="floatingStick" aria-hidden="true"><div class="stick-base"><div id="stickThumb" class="stick-thumb"></div></div></div>
  <section class="controls" aria-label="戰鬥控制">
   <div class="actionArea">
-   <button id="weaponSwitch" class="weapon-switch" type="button" aria-pressed="false" aria-label="切換拳頭和步槍"><span id="weaponIcon">🔫</span><small id="weaponLabel">拿槍</small></button>
+   <button id="weaponSwitch" class="weapon-switch" type="button" aria-pressed="false" aria-expanded="false" aria-controls="weaponWheel" aria-label="按住滑動開啟武器輪盤"><span id="weaponIcon">◉</span><small id="weaponLabel">武器</small></button>
    <button id="attack" class="action attack" type="button"><span id="attackIcon">✊</span><small id="attackLabel">攻擊</small></button>
   </div>
  </section>
+ <div id="weaponWheel" class="weaponWheel" role="dialog" aria-label="武器輪盤" aria-hidden="true" hidden>
+  <div class="wheelDisc" id="wheelDisc">
+   <div class="wheelRing" aria-hidden="true"></div>
+   <button class="wheelSlot top" data-slot="up" type="button"><span>✊</span><small>拳頭</small></button>
+   <button class="wheelSlot right" data-slot="right" type="button"><span>🔫</span><small>手槍</small></button>
+   <button class="wheelSlot bottom locked" data-slot="bottom" type="button"><span>🔒</span><small>未解鎖</small></button>
+   <button class="wheelSlot left locked" data-slot="left" type="button"><span>🔒</span><small>未解鎖</small></button>
+   <button id="wheelCancel" class="wheelCenter" type="button"><strong id="wheelChoice">拳頭</strong><small>取消</small></button>
+  </div>
+  <p class="wheelHint">按住滑動選擇 · 放開切換</p>
+ </div>
  <footer class="footer">
   <div class="settings">
    <label class="switchLabel"><input type="checkbox" id="counter" checked> NPC 會反擊</label>
    <label class="difficultyLabel" for="difficulty">反擊強度 <select id="difficulty"><option value="normal">一般</option><option value="hard">兇猛</option></select></label>
    <button id="reset" class="reset" type="button">↻ 重開測試</button>
   </div>
-  <p>電腦：WASD 移動 · Q 換武器 · J 攻擊／開火。手機：下半部移動、上半部轉鏡頭、雙指縮放。</p>
-  <p>NPC 現在會跑步追擊；開火時自動鎖定正前方 15° 內的 NPC，移動中槍跟著手走。實驗室不影響正式軍營。</p>
+  <p>電腦：WASD 移動 · 按住 Q＋方向鍵選武器 · J 攻擊。手機：按住武器鍵滑動選擇，放開切換。</p>
+  <p>死亡後自然仰躺；輪盤開啟時極慢動作。手槍單發，鎖定正前方 15° 內的 NPC。</p>
  </footer>
  <div id="loading" class="loading" role="status">
   <div class="loadingCard">
@@ -75,6 +86,6 @@
    <a href="./index.html?v=205">返回軍營</a>
   </div>
  </div>
- <script type="module" src="./src/fight-lab/lab.js?v=8"></script>
+ <script type="module" src="./src/fight-lab/lab.js?v=9"></script>
 </body>
 </html>

@@ -130,7 +130,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #fae39c;outline-offset:2p
 .weapon-switch>span{font-size:24px;line-height:1}
 .weapon-switch>small{font-size:10px}
 .weapon-switch[aria-pressed="true"]{background:linear-gradient(145deg,#dcb974,#866b4e);border-color:#ffe5ad}
-.action.attack.rifle{background:linear-gradient(145deg,#e7c16d,#aa7441);border-color:#ffebc1}
+.action.attack.pistol{background:linear-gradient(145deg,#e7c16d,#aa7441);border-color:#ffebc1}
 .bulletTracer{position:absolute;z-index:8;height:3px;border-radius:99px;pointer-events:none;
  transform-origin:0 50%;background:linear-gradient(90deg,#ffc65a22 0%,#fff3bd 68%,#fff 100%);
  box-shadow:0 0 5px #fdb647c9,0 0 13px #fde0a573}
@@ -149,3 +149,40 @@ button:focus-visible,a:focus-visible{outline:3px solid #fae39c;outline-offset:2p
  .weapon-switch>span{font-size:22px}.weapon-switch>small{font-size:10px}
  .actionArea{gap:9px}}
 @media(max-height:620px){.weapon-switch{width:53px;height:53px}}
+
+/* V2.4: radial GTA-style weapon wheel with two live weapon categories. */
+.weaponWheel[hidden]{display:none!important}
+.weaponWheel{position:fixed;inset:0;z-index:19;display:flex;align-items:center;justify-content:center;
+ flex-direction:column;background:rgba(4,15,13,.64);backdrop-filter:blur(4px);
+ -webkit-backdrop-filter:blur(4px);touch-action:none;color:#f8ebc9}
+.wheelDisc{position:relative;width:min(77vw,330px,62dvh);height:min(77vw,330px,62dvh);
+ border-radius:50%;display:grid;place-items:center;border:2px solid #e6d19c80;
+ background:radial-gradient(circle at center,#12291d 0 22%,transparent 23%),
+ conic-gradient(from -45deg,#50725b 0 24.8%,#d5a85b 25% 49.8%,#385a4b 50% 74.8%,#304b3d 75% 99.8%);
+ box-shadow:0 10px 60px #000b,inset 0 0 30px #0e251d9e}
+.wheelRing{position:absolute;inset:22%;border-radius:50%;border:2px solid #ebd9b385;pointer-events:none;
+ box-shadow:0 0 0 1px #0d271d8a}
+.wheelSlot{position:absolute;z-index:1;width:29%;height:29%;border:1px solid #f2e7c570;
+ background:#193d30bd;color:#f8ebcb;border-radius:16px;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+ font-weight:900;touch-action:none;box-shadow:0 3px 10px #081a15b3}
+.wheelSlot>span{font-size:clamp(22px,6vw,34px);line-height:1.1}
+.wheelSlot>small{font-size:clamp(10px,2.3vw,12px);white-space:nowrap}
+.wheelSlot.top{left:35.5%;top:4.5%}
+.wheelSlot.right{right:4.5%;top:35.5%}
+.wheelSlot.bottom{left:35.5%;bottom:4.5%}
+.wheelSlot.left{left:4.5%;top:35.5%}
+.wheelSlot.selected{background:#f0d391;color:#203c2f;border:3px solid #fff7df;
+ box-shadow:0 0 0 4px #edc77665,0 0 20px #f3d18b8c}
+.wheelSlot.locked{opacity:.52}
+.wheelSlot.locked.selected{background:#46534b;color:#fbdfb7}
+.wheelCenter{position:relative;z-index:2;width:34%;height:34%;border:2px solid #f4d88a;
+ background:linear-gradient(140deg,#264b36,#132d23);border-radius:50%;color:#f9e6b9;
+ display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;
+ box-shadow:0 5px 20px #0007}
+.wheelCenter strong{font-size:clamp(11px,3vw,15px)}
+.wheelCenter small{font-size:10px;opacity:.73}
+.wheelHint{font-size:12px;font-weight:850;margin:15px 0 0;letter-spacing:.4px;color:#f0e3ba}
+.weaponWheelOpen .callout{opacity:.4}
+.weaponWheelOpen .weapon-switch{filter:brightness(1.22);border-color:#f9eabf;touch-action:none}
+@media(max-height:580px){.wheelDisc{width:min(60vw,64dvh);height:min(60vw,64dvh)}.wheelHint{margin-top:6px}}
