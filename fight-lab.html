@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+ <meta name="theme-color" content="#182c20">
+ <title>國軍模擬器｜格鬥打擊實驗室</title>
+ <link rel="stylesheet" href="./src/fight-lab/lab.css?v=4">
+</head>
+<body>
+ <canvas id="arena" aria-label="3D軍營格鬥實驗場"></canvas>
+ <div id="flash" aria-hidden="true"></div>
+ <div id="burstLayer" aria-hidden="true"></div>
+ <header class="header">
+  <div class="headerLeft"><div class="eyebrow">ARMY3 · COMBAT TEST</div><h1>格鬥打擊實驗室 <small>V2.3</small></h1></div>
+  <a class="exit" href="./index.html?v=205">← 返回測試首頁</a>
+ </header>
+ <section class="scores" aria-label="雙方狀態">
+  <div class="fighterScore player">
+   <div class="fighterName"><strong>🪖 玩家</strong><span id="playerHPText">100 / 100</span></div>
+   <div class="health"><div id="playerHP" class="healthFill"></div></div>
+  </div>
+  <div class="versus">VS</div>
+  <div class="fighterScore enemy">
+   <div class="fighterName"><strong>🥊 第一名阿兵哥</strong><span id="enemyHPText">100 / 100</span></div>
+   <div class="health"><div id="enemyHP" class="healthFill"></div></div>
+  </div>
+ </section>
+ <div class="hudTop">
+  <div id="sceneStatus" class="sceneStatus">準備載入士兵模型…</div>
+  <div id="combo" class="combo" hidden>2 HIT COMBO</div>
+ </div>
+ <aside id="alliesHud" class="alliesHud" aria-label="友軍反擊狀態">
+   <span id="allyCount">其他 3 人尚未警戒</span>
+   <div class="allyGroup"><span id="allyStatus1">友軍 1 · 100%</span><span id="allyStatus2">友軍 2 · 100%</span><span id="allyStatus3">友軍 3 · 100%</span></div>
+ </aside>
+ <div class="targetLabel you" id="playerLabel">你</div>
+ <div class="targetLabel them" id="enemyLabel">阿兵哥</div>
+ <div class="targetLabel them" id="ally1Label">友軍 1</div>
+ <div class="targetLabel them" id="ally2Label">友軍 2</div>
+ <div class="targetLabel them" id="ally3Label">友軍 3</div>
+ <div id="callout" class="callout" aria-live="polite">靠近 NPC，打一拳試試看！</div>
+ <div id="floatingStick" aria-hidden="true"><div class="stick-base"><div id="stickThumb" class="stick-thumb"></div></div></div>
+ <section class="controls" aria-label="戰鬥控制">
+  <div class="actionArea">
+   <button id="weaponSwitch" class="weapon-switch" type="button" aria-pressed="false" aria-label="切換拳頭和步槍"><span id="weaponIcon">🔫</span><small id="weaponLabel">拿槍</small></button>
+   <button id="attack" class="action attack" type="button"><span id="attackIcon">✊</span><small id="attackLabel">攻擊</small></button>
+  </div>
+ </section>
+ <footer class="footer">
+  <div class="settings">
+   <label class="switchLabel"><input type="checkbox" id="counter" checked> NPC 會反擊</label>
+   <label class="difficultyLabel" for="difficulty">反擊強度 <select id="difficulty"><option value="normal">一般</option><option value="hard">兇猛</option></select></label>
+   <button id="reset" class="reset" type="button">↻ 重開測試</button>
+  </div>
+  <p>電腦：WASD 移動 · Q 換武器 · J 攻擊／開火。手機：下半部移動、上半部轉鏡頭、雙指縮放。</p>
+  <p>NPC 現在會跑步追擊；開火時自動鎖定正前方 15° 內的 NPC，移動中槍跟著手走。實驗室不影響正式軍營。</p>
+ </footer>
+ <div id="loading" class="loading" role="status">
+  <div class="loadingCard">
+   <div class="loaderIcon">🥊</div>
+   <strong>打架實驗室建置中</strong>
+   <p id="loadText">載入士兵模型，以及新提供的受擊、擊飛、起身動畫…</p>
+   <div class="loadingTrack"><div id="loadBar"></div></div>
+   <button id="retry" type="button" hidden>重新載入</button>
+  </div>
+ </div>
+ <div id="endScreen" class="endScreen" hidden>
+  <div class="endCard">
+   <div class="endKicker">國軍格鬥鑑測 · 實驗結果</div>
+   <h2 id="endTitle">測試完成</h2>
+   <p id="endComment"></p>
+   <div class="endStats"><div><small>你打中幾拳</small><strong id="playerHits">0</strong></div><div><small>被反擊次數</small><strong id="enemyHits">0</strong></div></div>
+   <button id="again" type="button">再打一場</button>
+   <a href="./index.html?v=205">返回軍營</a>
+  </div>
+ </div>
+ <script type="module" src="./src/fight-lab/lab.js?v=8"></script>
+</body>
+</html>
